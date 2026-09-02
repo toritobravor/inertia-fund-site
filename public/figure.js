@@ -1,6 +1,6 @@
 /* Inertia Fund — the figure.
-   A wireframe rotating mass (the physical source of grid inertia) that slows and
-   morphs, as the reader scrolls, into a turbine disc and then a transmission lattice.
+   A wireframe turbine stage that, as the reader scrolls, slows and morphs into a flywheel
+   (the rotating mass that is the physical source of grid inertia) and then a transmission lattice.
    Plain Canvas 2D, no dependencies, hairline strokes only. */
 (function () {
   'use strict';
@@ -30,18 +30,35 @@
     return { v: v, e: e };
   }
 
-  // Shape 2 — turbine disc: blades sweep outward with a twist; layers become blade root → tip.
+  // Shape 2 — an axial turbine stage: 18 twisted blades from a hub ring to a shrouded tip,
+  // each blade a leading and a trailing edge over four span stations. Index layout mirrors the
+  // flywheel (station × angle) so the two morph cleanly into one another.
   function turbine() {
-    var v = [], e = [];
-    for (var r = 0; r < R; r++) for (var a = 0; a < A; a++) {
-      var f = r / (R - 1);                       // 0 root → 1 tip
-      var rad = 0.18 + f * 0.82;
-      var t = a / A * TAU + f * 0.9;             // sweep
-      var z = (f - 0.5) * 0.36 * Math.sin(a / A * TAU * 3);
-      v.push([Math.cos(t) * rad, Math.sin(t) * rad, z]);
+    var v = new Array(N), e = [], B = A / 2, chord = 0.26;
+    for (var st = 0; st < R; st++) {
+      var f = st / (R - 1);                          // 0 root → 1 tip
+      var rad = 0.34 + 0.66 * f;
+      var stagger = 0.95 - 0.45 * f;                // blades twist toward the tip
+      for (var bl = 0; bl < B; bl++) {
+        var th = bl / B * TAU;
+        for (var edge = 0; edge < 2; edge++) {
+          var sgn = edge === 0 ? 1 : -1;            // leading / trailing edge
+          var dz = sgn * chord / 2 * Math.cos(stagger);
+          var dth = sgn * chord / 2 * Math.sin(stagger) / rad;
+          v[st * A + bl * 2 + edge] = [Math.cos(th + dth) * rad, Math.sin(th + dth) * rad, dz];
+        }
+      }
     }
-    for (var a2 = 0; a2 < A; a2++) for (var r2 = 0; r2 < R - 1; r2++) e.push([r2 * A + a2, (r2 + 1) * A + a2]); // blade lines
-    for (a2 = 0; a2 < A; a2++) { e.push([a2, (a2 + 1) % A]); e.push([(R - 1) * A + a2, (R - 1) * A + (a2 + 1) % A]); } // hub and rim
+    for (var bl2 = 0; bl2 < B; bl2++) {
+      for (var st2 = 0; st2 < R; st2++) {
+        var le = st2 * A + bl2 * 2, te = le + 1;
+        e.push([le, te]);                                                    // chord at each station
+        if (st2 < R - 1) { e.push([le, le + A]); e.push([te, te + A]); }    // leading and trailing edges along the span
+      }
+      var nb = (bl2 + 1) % B;
+      e.push([bl2 * 2, nb * 2]); e.push([bl2 * 2 + 1, nb * 2 + 1]);         // hub rings (root, both edges)
+      e.push([(R - 1) * A + bl2 * 2, (R - 1) * A + nb * 2]);                // tip shroud
+    }
     return { v: v, e: e };
   }
 
@@ -60,7 +77,7 @@
     return { v: v, e: e };
   }
 
-  var shapes = [rotor(), turbine(), lattice()];
+  var shapes = [turbine(), rotor(), lattice()];   // masthead → firm → theses
 
   // ---------- scroll → stage ----------
   // Stage boundaries are read from sections so the morph tracks the page's own structure.
@@ -79,7 +96,7 @@
   function progress() {
     var y = window.scrollY || window.pageYOffset || 0;
     var vh = window.innerHeight;
-    // rotor → turbine across masthead → firm; turbine → lattice across firm → believe
+    // turbine → flywheel across masthead → firm; flywheel → lattice across firm → believe
     var p1 = clamp((y - (M[1] - vh * 0.7)) / (vh * 0.7), 0, 1);
     var p2 = clamp((y - (M[2] - vh * 0.7)) / (vh * 0.7), 0, 1);
     var fade = clamp((y - (M[3] - vh * 0.6)) / (vh * 0.8), 0, 1); // fade out toward "The name"
@@ -127,10 +144,10 @@
     // On the dark masthead the figure sits large at the right; on paper it moves to the
     // left column, beneath the section heads, where the page leaves room for it.
     var rPaper = narrow ? Math.min(W * 0.28, H * 0.14) : Math.min(W * 0.10, H * 0.14);
-    var rDark = narrow ? Math.min(W * 0.36, H * 0.22) : Math.min(W * 0.21, H * 0.36);
+    var rDark = narrow ? Math.min(W * 0.36, H * 0.22) : Math.min(W * 0.165, H * 0.32);
     var radius = lerp(rPaper, rDark, s.dark);
     var an = anchor(rPaper);
-    var cx = narrow ? W * 0.5 : lerp(W * 0.22, W * 0.70, s.dark);
+    var cx = narrow ? W * 0.5 : lerp(W * 0.22, W * 0.77, s.dark);
     var cy = narrow ? H * 0.5 : lerp(an.cy, H * 0.50, s.dark);
     if (narrow && slot) {                      // small screens: the figure sits in its own slot in the hero
       var sb = slot.getBoundingClientRect();
@@ -149,9 +166,9 @@
     }
 
     // Own-axis spin (fast as a rotor, slower as a turbine, none as a lattice) + a slow tumble
-    var spinRate = lerp(lerp(1.0, 0.35, s.p1), 0, s.p2);
-    var tilt = lerp(0.95, 0.55, s.p2);     // view the rotor almost edge-on; the lattice more from above
-    var yaw = 0.35 + s.y * 0.0006;          // gentle rotation driven by scroll
+    var spinRate = lerp(lerp(1.0, 0.45, s.p1), 0, s.p2);
+    var tilt = lerp(lerp(1.05, 0.72, s.p1), 0.55, s.p2);     // a three-quarter view of the turbine face; the lattice more from above
+    var yaw = 0.3 + 0.35 * Math.sin(s.y * 0.0008);   // gentle, bounded rotation driven by scroll
     var cs = Math.cos(spin), sn = Math.sin(spin);
     var ct = Math.cos(tilt), st = Math.sin(tilt);
     var cyw = Math.cos(yaw), syw = Math.sin(yaw);
