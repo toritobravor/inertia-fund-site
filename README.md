@@ -8,11 +8,14 @@ Source for [inertia.fund](https://inertia.fund). A static site served by Cloudfl
 public/          everything in here is served as-is
   index.html     the site (single page)
   styles.css     brand system as CSS
+  figure.js      the scroll-morphing wireframe (rotor → turbine → lattice), plain Canvas 2D
+  fonts/         self-hosted woff2 (SIL OFL)
   favicon.svg    the boxed "In" device
   404.html       not-found page
   robots.txt
   _headers       security and caching headers
 wrangler.jsonc   Cloudflare configuration
+tools/charts.py  generates the 'State of power' SVG panels; paste output between the chart markers in index.html
 ```
 
 ## Editing
