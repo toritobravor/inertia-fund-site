@@ -111,13 +111,14 @@ em { font-style: italic; }
 .on-dark .wordmark .box { background: var(--bone); color: var(--ink); }
 
 .lockup { display: inline-flex; flex-direction: column; align-items: stretch; }
-.lockup .rule { height: 1.4px; background: currentColor; margin: .18em 0 .16em; opacity: .9; }
+.lockup .rule { height: 1.4px; background: currentColor; margin: .16em 0 .14em; opacity: .9; }
 .lockup .fund {
   font-family: var(--serif-sc);
-  font-size: .225em;
-  letter-spacing: .44em;
+  font-size: .5em;                 /* half the height of the wordmark */
+  text-transform: uppercase;
+  letter-spacing: .38em;
   text-align: center;
-  text-indent: .44em; /* optical centering — offsets trailing letterspace */
+  text-indent: .38em; /* optical centering — offsets trailing letterspace */
   line-height: 1;
 }
 

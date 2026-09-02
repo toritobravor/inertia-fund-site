@@ -30,7 +30,7 @@
     return { v: v, e: e };
   }
 
-  // Shape 2 — an axial turbine stage: 18 twisted blades from a hub ring to a shrouded tip,
+  // Shape 2 — an axial turbine stage: 18 twisted blades from a hub ring to a free tip,
   // each blade a leading and a trailing edge over four span stations. Index layout mirrors the
   // flywheel (station × angle) so the two morph cleanly into one another.
   function turbine() {
@@ -56,8 +56,7 @@
         if (st2 < R - 1) { e.push([le, le + A]); e.push([te, te + A]); }    // leading and trailing edges along the span
       }
       var nb = (bl2 + 1) % B;
-      e.push([bl2 * 2, nb * 2]); e.push([bl2 * 2 + 1, nb * 2 + 1]);         // hub rings (root, both edges)
-      e.push([(R - 1) * A + bl2 * 2, (R - 1) * A + nb * 2]);                // tip shroud
+      e.push([bl2 * 2, nb * 2]); e.push([bl2 * 2 + 1, nb * 2 + 1]);         // hub rings (root, both edges); tips run free
     }
     return { v: v, e: e };
   }
@@ -167,7 +166,7 @@
 
     // Own-axis spin (fast as a rotor, slower as a turbine, none as a lattice) + a slow tumble
     var spinRate = lerp(lerp(1.0, 0.45, s.p1), 0, s.p2);
-    var tilt = lerp(lerp(1.05, 0.72, s.p1), 0.55, s.p2);     // a three-quarter view of the turbine face; the lattice more from above
+    var tilt = lerp(lerp(0.32, 0.72, s.p1), 0.55, s.p2);     // the turbine stands nearly upright, face toward the reader; the lattice more from above
     var yaw = 0.3 + 0.35 * Math.sin(s.y * 0.0008);   // gentle, bounded rotation driven by scroll
     var cs = Math.cos(spin), sn = Math.sin(spin);
     var ct = Math.cos(tilt), st = Math.sin(tilt);
