@@ -154,7 +154,7 @@ header .running a:hover { color: var(--bone); }
 header .running nav { display: flex; gap: 28px; }
 @media (max-width: 640px) { header .running nav { display: none; } }
 
-header .hero { padding-top: clamp(72px, 14vh, 150px); padding-bottom: clamp(48px, 8vh, 96px); }
+header .hero { padding-top: clamp(56px, 10vh, 120px); padding-bottom: clamp(48px, 8vh, 96px); }
 header .hero .lockup { font-size: clamp(56px, 10vw, 128px); color: var(--bone); margin-bottom: clamp(40px, 7vh, 88px); }
 .figure-slot { height: 0; }
 @media (max-width: 800px) { .figure-slot { height: 38vh; margin: -4vh 0 2vh; } header .hero .lockup { margin-bottom: 0; } }
