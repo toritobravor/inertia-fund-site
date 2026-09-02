@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://inertia.fund/sitemap.xml
