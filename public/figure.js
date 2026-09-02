@@ -30,33 +30,47 @@
     return { v: v, e: e };
   }
 
-  // Shape 2 — an axial turbine stage: 18 twisted blades from a hub ring to a free tip,
-  // each blade a leading and a trailing edge over four span stations. Index layout mirrors the
-  // flywheel (station × angle) so the two morph cleanly into one another.
+  // Shape 2 — a three-stage axial turbine on one shaft: a large front stage, a smaller stage
+  // behind it, and a second large stage at the back. Each stage is 18 twisted blades from a hub
+  // ring to a free tip, drawn as leading edge, trailing edge and chord lines. The front stage
+  // occupies indices 0..N-1 and mirrors the flywheel's (station × angle) layout so the two morph
+  // cleanly; the other stages collapse onto it during the morph.
+  var STAGES = [
+    { z: -0.85, scale: 1.00, spin: 1.00, phase: 0.00, ink: 1.00 },
+    { z:  0.00, scale: 0.66, spin: 0.62, phase: 0.17, ink: 0.62 },
+    { z:  0.85, scale: 1.00, spin: 1.00, phase: 0.09, ink: 0.42 }
+  ];
   function turbine() {
-    var v = new Array(N), e = [], B = A / 2, chord = 0.26;
-    for (var st = 0; st < R; st++) {
-      var f = st / (R - 1);                          // 0 root → 1 tip
-      var rad = 0.34 + 0.66 * f;
-      var stagger = 0.95 - 0.45 * f;                // blades twist toward the tip
-      for (var bl = 0; bl < B; bl++) {
-        var th = bl / B * TAU;
-        for (var edge = 0; edge < 2; edge++) {
-          var sgn = edge === 0 ? 1 : -1;            // leading / trailing edge
-          var dz = sgn * chord / 2 * Math.cos(stagger);
-          var dth = sgn * chord / 2 * Math.sin(stagger) / rad;
-          v[st * A + bl * 2 + edge] = [Math.cos(th + dth) * rad, Math.sin(th + dth) * rad, dz];
+    var v = new Array(N * STAGES.length), e = [], B = A / 2, chord = 0.26;
+    for (var k = 0; k < STAGES.length; k++) {
+      var S = STAGES[k], base = k * N;
+      for (var st = 0; st < R; st++) {
+        var f = st / (R - 1);                          // 0 root → 1 tip
+        var rad = (0.34 + 0.66 * f) * S.scale;
+        var stagger = 0.95 - 0.45 * f;                // blades twist toward the tip
+        for (var bl = 0; bl < B; bl++) {
+          var th = bl / B * TAU;
+          for (var edge = 0; edge < 2; edge++) {
+            var sgn = edge === 0 ? 1 : -1;            // leading / trailing edge
+            var dz = sgn * chord / 2 * Math.cos(stagger) * S.scale;
+            var dth = sgn * chord / 2 * Math.sin(stagger) / rad * S.scale;
+            v[base + st * A + bl * 2 + edge] = [Math.cos(th + dth) * rad, Math.sin(th + dth) * rad, S.z + dz];
+          }
         }
       }
-    }
-    for (var bl2 = 0; bl2 < B; bl2++) {
-      for (var st2 = 0; st2 < R; st2++) {
-        var le = st2 * A + bl2 * 2, te = le + 1;
-        e.push([le, te]);                                                    // chord at each station
-        if (st2 < R - 1) { e.push([le, le + A]); e.push([te, te + A]); }    // leading and trailing edges along the span
+      for (var bl2 = 0; bl2 < B; bl2++) {
+        for (var st2 = 0; st2 < R; st2++) {
+          var le = base + st2 * A + bl2 * 2, te = le + 1;
+          e.push([le, te, S.ink]);                                                      // chord at each station
+          if (st2 < R - 1) { e.push([le, le + A, S.ink]); e.push([te, te + A, S.ink]); } // leading and trailing edges along the span
+        }
+        var nb = (bl2 + 1) % B;
+        e.push([base + bl2 * 2, base + nb * 2, S.ink]); e.push([base + bl2 * 2 + 1, base + nb * 2 + 1, S.ink]); // hub rings
       }
-      var nb = (bl2 + 1) % B;
-      e.push([bl2 * 2, nb * 2]); e.push([bl2 * 2 + 1, nb * 2 + 1]);         // hub rings (root, both edges); tips run free
+    }
+    // The shaft: six lines joining the hub rings of adjacent stages
+    for (k = 0; k < STAGES.length - 1; k++) for (var q = 0; q < B; q += 3) {
+      e.push([k * N + q * 2 + 1, (k + 1) * N + q * 2, STAGES[k + 1].ink]);
     }
     return { v: v, e: e };
   }
@@ -143,10 +157,10 @@
     // On the dark masthead the figure sits large at the right; on paper it moves to the
     // left column, beneath the section heads, where the page leaves room for it.
     var rPaper = narrow ? Math.min(W * 0.28, H * 0.14) : Math.min(W * 0.10, H * 0.14);
-    var rDark = narrow ? Math.min(W * 0.36, H * 0.22) : Math.min(W * 0.165, H * 0.32);
+    var rDark = narrow ? Math.min(W * 0.34, H * 0.20) : Math.min(W * 0.135, H * 0.26);
     var radius = lerp(rPaper, rDark, s.dark);
     var an = anchor(rPaper);
-    var cx = narrow ? W * 0.5 : lerp(W * 0.22, W * 0.77, s.dark);
+    var cx = narrow ? W * 0.5 : lerp(W * 0.22, W * 0.76, s.dark);
     var cy = narrow ? H * 0.5 : lerp(an.cy, H * 0.50, s.dark);
     if (narrow && slot) {                      // small screens: the figure sits in its own slot in the hero
       var sb = slot.getBoundingClientRect();
@@ -154,10 +168,13 @@
       radius = Math.min(W * 0.36, sb.height * 0.42);
     }
 
-    // Blend vertices: rotor → turbine → lattice
-    var pts = new Array(N);
-    for (var i = 0; i < N; i++) {
-      var a = shapes[0].v[i], b = shapes[1].v[i], c = shapes[2].v[i];
+    // Blend vertices: turbine → flywheel → lattice. The turbine's rear stages collapse onto the
+    // front stage's targets as the morph begins, so they vanish into the flywheel.
+    var NT = shapes[0].v.length;
+    var pts = new Array(NT);
+    for (var i = 0; i < NT; i++) {
+      var j = i % N;
+      var a = shapes[0].v[i], b = shapes[1].v[j], c = shapes[2].v[j];
       var x = lerp(lerp(a[0], b[0], s.p1), c[0], s.p2);
       var y = lerp(lerp(a[1], b[1], s.p1), c[1], s.p2);
       var z = lerp(lerp(a[2], b[2], s.p1), c[2], s.p2);
@@ -166,20 +183,22 @@
 
     // Own-axis spin (fast as a rotor, slower as a turbine, none as a lattice) + a slow tumble
     var spinRate = lerp(lerp(1.0, 0.45, s.p1), 0, s.p2);
-    var tilt = lerp(lerp(0.32, 0.72, s.p1), 0.55, s.p2);     // the turbine stands nearly upright, face toward the reader; the lattice more from above
-    var yaw = 0.3 + 0.35 * Math.sin(s.y * 0.0008);   // gentle, bounded rotation driven by scroll
-    var cs = Math.cos(spin), sn = Math.sin(spin);
+    var tilt = lerp(lerp(0.18, 0.72, s.p1), 0.55, s.p2);     // the turbine stands upright; the lattice is seen more from above
+    var yaw = lerp(-0.8, 0.3, s.p1) + 0.3 * Math.sin(s.y * 0.0008);   // the turbine is seen from the side-front so its stages read along the shaft
     var ct = Math.cos(tilt), st = Math.sin(tilt);
     var cyw = Math.cos(yaw), syw = Math.sin(yaw);
 
-    var proj = new Array(N);
-    for (i = 0; i < N; i++) {
+    var proj = new Array(NT);
+    for (i = 0; i < NT; i++) {
       var p = pts[i];
+      // each turbine stage spins at its own rate (the flywheel and lattice use the front stage's)
+      var S = STAGES[Math.floor(i / N)], ang = spin * lerp(S.spin, 1, s.p1) + S.phase * (1 - s.p1);
+      var cs = Math.cos(ang), sn = Math.sin(ang);
       // spin about z (the shaft), then tilt about x, then yaw about y
       var x1 = p[0] * cs - p[1] * sn, y1 = p[0] * sn + p[1] * cs, z1 = p[2];
       var y2 = y1 * ct - z1 * st, z2 = y1 * st + z1 * ct;
       var x3 = x1 * cyw + z2 * syw, z3 = -x1 * syw + z2 * cyw;
-      var d = 3.2 / (3.2 + z3);            // perspective
+      var d = 4.6 / (4.6 + z3);            // perspective
       proj[i] = [cx + x3 * radius * d, cy + y2 * radius * d, d];
     }
 
@@ -198,14 +217,23 @@
 
     function edges(shape, weight) {
       if (weight <= 0.01) return;
-      ctx.beginPath();
+      // edges may carry a third value: a per-edge ink weight (rear turbine stages recede)
+      var groups = {};
       for (var k = 0; k < shape.e.length; k++) {
-        var pa = proj[shape.e[k][0]], pb = proj[shape.e[k][1]];
-        ctx.moveTo(pa[0], pa[1]); ctx.lineTo(pb[0], pb[1]);
+        var w = shape.e[k][2] === undefined ? 1 : shape.e[k][2];
+        (groups[w] = groups[w] || []).push(shape.e[k]);
       }
-      ctx.strokeStyle = 'rgba(' + col + ',' + (alpha * weight).toFixed(3) + ')';
       ctx.lineWidth = 1;
-      ctx.stroke();
+      for (var g in groups) {
+        ctx.beginPath();
+        var list = groups[g];
+        for (var m = 0; m < list.length; m++) {
+          var pa = proj[list[m][0]], pb = proj[list[m][1]];
+          ctx.moveTo(pa[0], pa[1]); ctx.lineTo(pb[0], pb[1]);
+        }
+        ctx.strokeStyle = 'rgba(' + col + ',' + (alpha * weight * lerp(parseFloat(g), 1, s.p1)).toFixed(3) + ')';
+        ctx.stroke();
+      }
     }
     // Crossfade edge sets
     edges(shapes[0], (1 - s.p1) * (1 - s.p2));
