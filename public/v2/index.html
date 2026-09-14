@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inertia Fund</title>
+<meta name="description" content="Inertia Fund is a power investment firm. It invests in the power sector at the point where a technology stops being a science question and becomes a delivery question.">
+<meta name="theme-color" content="#15191D">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/styles.css">
+<style>
+  /* ---- v2: the path of a megawatt ---- */
+  html, body { background: var(--ink); color: var(--bone); }
+  body { overflow-x: hidden; }
+  #stage { position: fixed; inset: 0; z-index: 0; }
+  #stage canvas { display: block; width: 100%; height: 100%; }
+  .veil { position: fixed; inset: 0; z-index: 0; pointer-events: none;
+          background: linear-gradient(90deg, rgba(21,25,29,.82) 0%, rgba(21,25,29,.55) 38%, rgba(21,25,29,0) 62%); }
+  @media (max-width: 800px) { .veil { background: linear-gradient(180deg, rgba(21,25,29,.2) 0%, rgba(21,25,29,.85) 55%, rgba(21,25,29,.95) 100%); } }
+
+  main.v2 { position: relative; z-index: 1; }
+  .v2 section { border-top: 0; padding-top: 0; }
+  .v2 .wrap { max-width: 1240px; }
+
+  /* running header */
+  .bar { position: fixed; top: 0; left: 0; right: 0; z-index: 3; display: flex; justify-content: space-between; align-items: center;
+         padding: 22px var(--gutter); font-family: var(--mono); font-size: 11px; letter-spacing: .19em; text-transform: uppercase; color: var(--ink-4);
+         mix-blend-mode: normal; }
+  .bar .brand { display: inline-flex; align-items: center; gap: 14px; color: var(--bone); border: 0; }
+  .bar .brand .wordmark { font-size: 15px; color: var(--bone); }
+  .bar .brand .wordmark .box { background: var(--bone); color: var(--ink); }
+  .bar nav { display: flex; gap: 28px; }
+  .bar nav a { border: 0; color: var(--ink-4); }
+  .bar nav a:hover { color: var(--bone); }
+  @media (max-width: 800px) { .bar nav { display: none; } }
+
+  /* screens */
+  .screen { min-height: 100vh; display: flex; align-items: flex-end; padding: 0 0 clamp(56px, 10vh, 120px); position: relative; }
+  .screen .wrap { width: 100%; }
+  .screen .copy { max-width: 40ch; }
+  .screen h1, .screen h2 { color: var(--bone); font-weight: 400; }
+  .screen h1 { font-size: clamp(26px, 3.1vw, 42px); line-height: 1.18; letter-spacing: -.005em; max-width: 26ch; }
+  .screen h2 { font-size: clamp(26px, 3.0vw, 40px); line-height: 1.16; letter-spacing: -.005em; max-width: 24ch; margin-bottom: 20px; }
+  .screen p { color: var(--ink-4); font-family: var(--serif); font-size: clamp(17px, 1.5vw, 21px); line-height: 1.45; max-width: 40ch; }
+  .screen .kicker { font-family: var(--mono); font-size: 11px; letter-spacing: .19em; text-transform: uppercase; color: var(--ink-4); margin: 0 0 22px; display: block; }
+  .screen .kicker b { color: var(--arc); font-weight: 400; }
+
+  .hero { align-items: center; }
+  .hero .lockup { font-size: clamp(56px, 9vw, 120px); color: var(--bone); margin-bottom: clamp(36px, 6vh, 72px); }
+  .hero .wordmark { color: var(--bone); } .hero .wordmark .box { background: var(--bone); color: var(--ink); }
+  .hero .more { position: absolute; left: var(--gutter); bottom: 28px; font-family: var(--mono); font-size: 11px; letter-spacing: .19em; text-transform: uppercase; color: var(--ink-4); }
+
+  /* chart moments */
+  .moment { min-height: 100vh; display: flex; align-items: center; position: relative; background: linear-gradient(180deg, rgba(21,25,29,0) 0%, rgba(21,25,29,.96) 14%, rgba(21,25,29,.96) 86%, rgba(21,25,29,0) 100%); }
+  .moment .wrap { width: 100%; }
+  .moment .big { font-family: var(--mono); font-variant-numeric: proportional-nums; font-size: clamp(96px, 18vw, 260px); line-height: .9; color: var(--bone); letter-spacing: -.03em; }
+  .moment .big sup { font-size: .22em; vertical-align: 2.2em; letter-spacing: .02em; color: var(--ink-4); margin-left: .1em; }
+  .moment .what { font-family: var(--serif); font-size: clamp(22px, 2.4vw, 34px); color: var(--bone); max-width: 30ch; line-height: 1.25; margin: 28px 0 20px; }
+  .moment .why { font-family: var(--sans); font-size: 16px; color: var(--ink-4); max-width: 60ch; line-height: 1.6; }
+  .moment .src { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; color: var(--ink-3); margin-top: 26px; display: block; }
+  .bars { margin-top: 40px; max-width: 640px; }
+  .bars .row { display: grid; grid-template-columns: 150px 1fr 56px; gap: 16px; align-items: center; padding: 10px 0; border-top: 1px solid #2a3037; font-family: var(--mono); font-size: 12px; color: var(--ink-4); }
+  .bars .row:last-child { border-bottom: 1px solid #2a3037; }
+  .bars .track { height: 8px; background: transparent; }
+  .bars .fill { height: 8px; background: var(--ink-4); border-radius: 0 4px 4px 0; }
+  .bars .row.hi .fill { background: var(--arc); } .bars .row.hi { color: var(--bone); }
+  .prop { margin-top: 44px; max-width: 900px; }
+  .prop .track { height: 14px; border: 1px solid #3a424a; border-radius: 4px; position: relative; }
+  .prop .fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--arc); border-radius: 4px 0 0 4px; }
+  .prop .labels { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 12px; color: var(--ink-4); margin-top: 12px; }
+  .prop .labels b { color: var(--arc); font-weight: 400; }
+
+  /* record & contact on dark */
+  .dark-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0 40px; border-top: 1px solid #2a3037; }
+  @media (max-width: 900px) { .dark-list { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 520px) { .dark-list { grid-template-columns: 1fr; } }
+  .dark-list li { padding: 28px 0 26px; border-bottom: 1px solid #2a3037; }
+  .dark-list .num { font-family: var(--mono); font-size: clamp(38px, 4vw, 56px); color: var(--bone); line-height: 1; }
+  .dark-list .num sup { font-size: .4em; vertical-align: .9em; color: var(--ink-4); margin-left: .1em; }
+  .dark-list .what { display: block; font-family: var(--serif); font-size: 18px; color: var(--bone); margin: 14px 0 6px; line-height: 1.35; }
+  .dark-list .how { display: block; font-size: 13.5px; color: var(--ink-4); line-height: 1.5; }
+  .end { padding: clamp(80px, 12vh, 140px) 0 60px; }
+  .end .contact { font-family: var(--serif); font-size: clamp(26px, 3vw, 40px); color: var(--bone); line-height: 1.25; }
+  .end .contact a { border-bottom: 1.4px solid var(--arc); color: var(--bone); }
+  .legal { font-size: 12.5px; color: var(--ink-3); max-width: 84ch; line-height: 1.55; margin-top: 60px; }
+  .legal a { color: var(--ink-4); }
+</style>
+</head>
+<body>
+
+<div id="stage" aria-hidden="true"></div>
+<div class="veil" aria-hidden="true"></div>
+
+<div class="bar">
+  <a class="brand" href="#top"><span class="wordmark tiny"><span class="box"><span>In</span></span>ertia</span><span>Fund</span></a>
+  <nav aria-label="Sections">
+    <a href="#gen">Generation</a>
+    <a href="#xfmr">Transformation</a>
+    <a href="#verify">Verification</a>
+    <a href="#record">Record</a>
+    <a href="#contact">Contact</a>
+  </nav>
+</div>
+
+<main class="v2" id="top">
+
+  <!-- 0 · Hero: the turbine-generator -->
+  <section class="screen hero" data-cam="0">
+    <div class="wrap">
+      <div class="lockup" role="img" aria-label="Inertia Fund">
+        <span class="wordmark"><span class="box"><span>In</span></span>ertia</span>
+        <span class="rule"></span>
+        <span class="fund">Fund</span>
+      </div>
+      <div class="copy">
+        <h1>Inertia Fund invests in the power sector, at the point where a technology stops being a science question and becomes a delivery question.</h1>
+      </div>
+    </div>
+    <span class="more">The path of a megawatt ↓</span>
+  </section>
+
+  <!-- 1 · Generation -->
+  <section class="screen" id="gen" data-cam="1">
+    <div class="wrap"><div class="copy">
+      <span class="kicker"><b>01</b> · Generation</span>
+      <h2>After the physics works. Before a bank will lend against it.</h2>
+      <p>Venture capital funds the physics. Project finance funds the proven. Between them sits the first commercial plant, the first factory, the first fleet — where the technology already works and the only remaining question is whether it can be built.</p>
+      <p>We judge a project on whether it can be built on time, not on how good the idea sounds.</p>
+    </div></div>
+  </section>
+
+  <!-- 2 · Transformation -->
+  <section class="screen" id="xfmr" data-cam="2">
+    <div class="wrap"><div class="copy">
+      <span class="kicker"><b>02</b> · Transformation</span>
+      <h2>Where we cannot see the transformer, we do not have a schedule.</h2>
+      <p>The binding constraint has moved from the power plant to the grid connection: the transformer, the switchgear, and the permission to connect. A project's schedule is a procurement document, not an engineering one.</p>
+    </div></div>
+  </section>
+
+  <!-- Moment A · 143 weeks -->
+  <section class="moment" data-cam="3">
+    <div class="wrap">
+      <div class="big">143<sup>weeks</sup></div>
+      <div class="what">The wait for a generator step-up transformer, from order to delivery.</div>
+      <div class="why">Power transformer prices are up 75–80% since 2019, and the only US producer of the electrical steel inside them completes its expansion in 2028. We will pay the right price for a shortage we have verified ourselves — and not for one everybody already knows about, because that scarcity is already in the price.</div>
+      <div class="bars" role="img" aria-label="Lead times in weeks: HV switchgear 44, power transformer 128, generator step-up 143">
+        <div class="row"><span>HV switchgear</span><div class="track"><div class="fill" style="width:28%"></div></div><span>44</span></div>
+        <div class="row"><span>Power transformer</span><div class="track"><div class="fill" style="width:82%"></div></div><span>128</span></div>
+        <div class="row hi"><span>Step-up (GSU)</span><div class="track"><div class="fill" style="width:92%"></div></div><span>143</span></div>
+      </div>
+      <span class="src">Wood Mackenzie / American Clean Power, Q2 2025. Constrained units quoted to four years, PwC, May 2026.</span>
+    </div>
+  </section>
+
+  <!-- 3 · Verification -->
+  <section class="screen" id="verify" data-cam="4">
+    <div class="wrap"><div class="copy">
+      <span class="kicker"><b>03</b> · Verification</span>
+      <h2>Much of what is reported as scarcity is an announcement, not a commitment.</h2>
+      <p>A shortage is only worth paying for if it is real and we have checked it ourselves: a signed order book, a quoted delivery date, a permit that has not been granted. We do not buy shortages we have read about.</p>
+    </div></div>
+  </section>
+
+  <!-- Moment B · 2 of 90 -->
+  <section class="moment" data-cam="5">
+    <div class="wrap">
+      <div class="big">2<sup>of 90 GW</sup></div>
+      <div class="what">On-site power announced for data centers, and the part of it that is actually running.</div>
+      <div class="why">Roughly 90 GW across 59 projects has been announced; about 2 GW operates. The series moves with press releases — it was 56 GW four months earlier — so we treat it as directional, and we underwrite the megawatt that has a permit, a turbine slot and a signed buyer.</div>
+      <div class="prop" role="img" aria-label="About 2 GW operating of about 90 GW announced, 2.2 percent">
+        <div class="track"><div class="fill" style="width:2.2%"></div></div>
+        <div class="labels"><span><b>~2 GW operating · 2.2%</b></span><span>~90 GW announced</span></div>
+      </div>
+      <span class="src">Cleanview, June 2026.</span>
+    </div>
+  </section>
+
+  <!-- Record -->
+  <section class="screen" id="record" data-cam="6" style="align-items:center">
+    <div class="wrap">
+      <div class="copy" style="max-width:40ch;margin-bottom:48px">
+        <span class="kicker"><b>04</b> · Delivery record</span>
+        <h2>People who have built, run and governed power systems at national scale.</h2>
+        <p>Most firms of comparable size reach this experience through advisers. At Inertia Fund it sits inside the investment committee.</p>
+      </div>
+      <ul class="dark-list">
+        <li><span class="num">120<sup>GW+</sup></span><span class="what">Generating capacity delivered, operated and governed</span><span class="how">Nuclear, hydro, gas and renewables, across the Gulf, Europe and Asia.</span></li>
+        <li><span class="num">$24<sup>bn</sup></span><span class="what">Project financing closed on a single new-build program</span><span class="how">Equity, direct loans and export-credit facilities, closed in 2016.</span></li>
+        <li><span class="num">38</span><span class="what">Governments aligned behind a single energy commitment</span><span class="how">Assembled country by country and launched at COP28.</span></li>
+        <li><span class="num">14</span><span class="what">Global banks and investment firms brought to a public statement of support</span><span class="how">Assembled institution by institution; Climate Week New York, 2024.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Contact -->
+  <section class="end" id="contact" data-cam="7">
+    <div class="wrap">
+      <span class="kicker" style="font-family:var(--mono);font-size:11px;letter-spacing:.19em;text-transform:uppercase;color:var(--ink-4);display:block;margin-bottom:22px">Inertia Fund is at inception</span>
+      <p class="contact">Inquiries from institutional investors, founders and operating partners:<br><a href="mailto:contact@inertia.fund">contact@inertia.fund</a></p>
+      <p class="legal">This website is provided for information only. Nothing on it is an offer to sell, or a solicitation of an offer to buy, any security or any interest in any fund or investment vehicle. Any such offer will be made only to qualified investors, by means of confidential offering documents, and only in jurisdictions where permitted by law. Figures on this page describe the prior professional experience of individuals associated with the firm; they are not a record of any fund managed by Inertia Fund and are not an indication of future results. © 2026 Inertia Fund.</p>
+    </div>
+  </section>
+
+</main>
+
+<script type="module" src="/v2/stage.js"></script>
+</body>
+</html>
