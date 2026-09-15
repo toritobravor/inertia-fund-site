@@ -70,12 +70,13 @@ async function triage(request, env, url) {
     });
   }
 
-  const claims = await verifyAccessJwt(request, env);
+  const diag = {};
+  const claims = await verifyAccessJwt(request, env, diag);
   if (!claims) {
     // Reaching this means the request did not come through Access, or the token is bad.
-    // Access itself returns its own login page on a normal browser visit, so this is the
-    // safety net rather than the usual path.
-    return json({ error: "not authenticated through Cloudflare Access" }, 403);
+    // diag.why names the specific check that failed. None of it is secret: the team domain
+    // and AUD tag identify the application, they do not authorize anything.
+    return json({ error: "not authenticated through Cloudflare Access", why: diag.why || "no reason recorded" }, 403);
   }
 
   const email = String(claims.email || "").toLowerCase();
@@ -121,25 +122,28 @@ async function triage(request, env, url) {
 // Verified with WebCrypto directly rather than a library, so the Worker has no npm
 // dependency and the repository can be edited through the GitHub web interface.
 
-async function verifyAccessJwt(request, env) {
+async function verifyAccessJwt(request, env, diag = {}) {
+  const fail = (why) => { diag.why = why; return null; };
+
   const token = request.headers.get("Cf-Access-Jwt-Assertion");
-  if (!token) return null;
+  if (!token) return fail("no Cf-Access-Jwt-Assertion header: the request did not come through Cloudflare Access");
   const parts = token.split(".");
-  if (parts.length !== 3) return null;
+  if (parts.length !== 3) return fail("token is not a three-part JWT");
 
   let header, payload;
   try {
     header = JSON.parse(new TextDecoder().decode(b64urlDecode(parts[0])));
     payload = JSON.parse(new TextDecoder().decode(b64urlDecode(parts[1])));
   } catch {
-    return null;
+    return fail("token header or payload is not valid JSON");
   }
-  if (header.alg !== "RS256" || !header.kid) return null;
+  if (header.alg !== "RS256" || !header.kid) return fail(`unexpected token algorithm ${header.alg}`);
 
   const teamDomain = String(env.CF_ACCESS_TEAM_DOMAIN).replace(/\/+$/, "");
   const keys = await accessKeys(teamDomain);
-  const jwk = keys && keys.find((k) => k.kid === header.kid);
-  if (!jwk) return null;
+  if (!keys) return fail(`could not fetch signing keys from ${teamDomain}/cdn-cgi/access/certs — check CF_ACCESS_TEAM_DOMAIN`);
+  const jwk = keys.find((k) => k.kid === header.kid);
+  if (!jwk) return fail("token was signed by a key this team domain does not publish — CF_ACCESS_TEAM_DOMAIN is probably the wrong team");
 
   let key;
   try {
@@ -151,7 +155,7 @@ async function verifyAccessJwt(request, env) {
       ["verify"]
     );
   } catch {
-    return null;
+    return fail("could not import the signing key");
   }
 
   const ok = await crypto.subtle.verify(
@@ -160,14 +164,18 @@ async function verifyAccessJwt(request, env) {
     b64urlDecode(parts[2]),
     new TextEncoder().encode(`${parts[0]}.${parts[1]}`)
   );
-  if (!ok) return null;
+  if (!ok) return fail("signature did not verify");
 
   const now = Math.floor(Date.now() / 1000);
-  if (typeof payload.exp !== "number" || payload.exp <= now) return null;
-  if (typeof payload.nbf === "number" && payload.nbf > now + 60) return null;
-  if (payload.iss !== teamDomain) return null;
+  if (typeof payload.exp !== "number" || payload.exp <= now) return fail("token has expired — sign in again");
+  if (typeof payload.nbf === "number" && payload.nbf > now + 60) return fail("token is not valid yet");
+  if (payload.iss !== teamDomain) {
+    return fail(`issuer mismatch: token says "${payload.iss}", CF_ACCESS_TEAM_DOMAIN is "${teamDomain}" — make them identical, including https://`);
+  }
   const aud = Array.isArray(payload.aud) ? payload.aud : [payload.aud];
-  if (!aud.includes(env.CF_ACCESS_AUD)) return null;
+  if (!aud.includes(env.CF_ACCESS_AUD)) {
+    return fail(`audience mismatch: token is for "${aud.join(", ")}", CF_ACCESS_AUD is "${env.CF_ACCESS_AUD}" — re-copy the AUD tag from the live application`);
+  }
 
   return payload;
 }
