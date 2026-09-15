@@ -6,21 +6,21 @@ Source for [inertia.fund](https://inertia.fund). A static site served by Cloudfl
 
 ```
 public/          everything in here is served as-is
-  index.html     the site (single page)
-  styles.css     brand system as CSS
-  figure.js      the scroll-morphing wireframe (rotor → turbine → lattice), plain Canvas 2D
+  index.html     the site (single page): 'The path of a megawatt'
+  styles.css     brand system as CSS (page-specific styles are inline in index.html)
+  stage.js       the 3D scene — LP turbine rotor and step-up transformer, camera driven by scroll (Three.js)
+  vendor/        three.js (MIT), self-hosted
   fonts/         self-hosted woff2 (SIL OFL)
   favicon.svg    the boxed "In" device
   404.html       not-found page
   robots.txt
   _headers       security and caching headers
 wrangler.jsonc   Cloudflare configuration
-tools/charts.py  generates the 'State of power' SVG panels; paste output between the chart markers in index.html
 ```
 
 ## Editing
 
-The site is plain HTML and CSS — no build step. Edit `public/index.html`, commit, push. Cloudflare rebuilds and deploys within about a minute; preview deployments are created for other branches.
+The site is plain HTML, CSS and one ES module — no build step. Edit `public/index.html`, commit, push. Cloudflare rebuilds and deploys within about a minute; preview deployments are created for other branches.
 
 ## House style
 
