@@ -213,12 +213,15 @@ function init() {
 
   let narrow = false;
   function resize() {
-    const w = stage.clientWidth, h = stage.clientHeight;
+    const w = Math.max(stage.clientWidth, 1), h = Math.max(stage.clientHeight, 1);
+    narrow = w < 800;
+    renderer.setPixelRatio(Math.min(devicePixelRatio, narrow ? 1.5 : 2));
     renderer.setSize(w, h, false);
     camera.aspect = w / h; camera.updateProjectionMatrix();
-    narrow = w < 800;
   }
-  addEventListener('resize', resize); resize();
+  addEventListener('resize', resize);
+  addEventListener('orientationchange', () => setTimeout(resize, 250));
+  resize();
 
   let angle = 0, last = performance.now(), curU = 0, curExp = 0.9;
   function frame(now) {
@@ -230,7 +233,12 @@ function init() {
     curExp += (exp - curExp) * (snap ? 1 : 1 - Math.exp(-dt * 5));
     renderer.toneMappingExposure = curExp;
     camera.position.copy(tmpPos);
-    if (narrow) { camera.position.z += 4.5; camera.position.y += 1.4; }
+    if (narrow) {
+      // Portrait phones: step back so more of the machine fits the narrow frame, and aim below it
+      // so it sits in the upper half of the screen, above the copy.
+      camera.position.z += 5.5; camera.position.y += 1.2;
+      tmpLook.y -= 1.7;
+    }
     camera.lookAt(tmpLook);
 
     // The rotor turns; slowly, since real machines read as heavy. It settles as the reader moves on.
