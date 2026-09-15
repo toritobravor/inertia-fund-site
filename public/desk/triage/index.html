@@ -1,43 +1,63 @@
-← DeskInertia Fund · internal · scores are judgmentsSign out
-Inertia Fund · Early Stage & Disruptors · Scorecard v2
-Early-Stage Triage
-Every name the Scout has ticketed, graded under Scorecard v2 on 7 September 2026. Scores are Inertia Fund judgments produced by an AI grader from the ticket. The last field on every card, Human intuition, is yours.
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Early-Stage Triage — Inertia Fund Desk</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/desk/triage/style.css">
+</head>
+<body>
+<div class="deskbar"><a href="https://inertia.fund">← Desk</a><span>Inertia Fund · internal · scores are judgments</span><a href="/cdn-cgi/access/logout">Sign out</a></div>
+<header class="mast">
+  <div>
+    <div class="eyebrow">Inertia Fund · Early Stage &amp; Disruptors · Scorecard v2</div>
+    <h1>Early-Stage Triage</h1>
+    <div class="sub">Every name the Scout has ticketed, graded under Scorecard v2 on 7 September 2026. Scores are Inertia Fund judgments produced by an AI grader from the ticket. The last field on every card, Human intuition, is yours.</div>
+  </div>
+  <div><div class="counts" id="counts"></div><div id="who"></div></div>
+</header>
 
+<div class="wrap">
+  <aside class="side">
+    <div class="tools">
+      <input type="search" id="q" placeholder="Search a name, sector, country" aria-label="Search companies">
+      <div class="chips" id="chips" role="group" aria-label="Filter by action"></div>
+    </div>
+    <div class="list" id="list" role="listbox" aria-label="Companies"></div>
+  </aside>
+  <main class="main" id="main"></main>
+</div>
 
-
-
-
-How the grade is made — Scorecard v2
-Axis
-Weight
-Floor
-Physics retired
-22
-below 2 blocks DIVE and SITE
-Path to first unit
-20
-below 2 blocks DIVE and SITE
-Buyer and license
-18
-—
-Team that has built
-15
-—
-Rate of progress
-15
-—
-Capital position
-10
-—
-Composite = 20 × (0.22 P + 0.20 D + 0.18 B + 0.15 T + 0.15 R + 0.10 K). All 3s = 60.0.
-Composite
-Card action
-Gate fail, graveyard, floor, or < 45
-STOP
-45 – 63.9, or 64+ with fewer than two axes at 4
-WATCH
-64 – 77.9 with two axes at 4
-DIVE
-78+ with floors clear
-SITE, provisional until the cost floor, a second score and the human read exist
-Human intuition: a named expert reads the finished card and records −2 to +2 with two paragraphs. A ±2 moves the action one step; ±1 breaks a tie within three points of a line. Nothing moves past Gate 0, the graveyard, or a hard floor. The read is stored by name and tested against the twelve-month outcome log.
+<details class="method">
+  <summary>How the grade is made — Scorecard v2</summary>
+  <div class="in">
+    <div>
+      <table>
+        <tr><th>Axis</th><th>Weight</th><th>Floor</th></tr>
+        <tr><td>Physics retired</td><td class="n">22</td><td>below 2 blocks DIVE and SITE</td></tr>
+        <tr><td>Path to first unit</td><td class="n">20</td><td>below 2 blocks DIVE and SITE</td></tr>
+        <tr><td>Buyer and license</td><td class="n">18</td><td>—</td></tr>
+        <tr><td>Team that has built</td><td class="n">15</td><td>—</td></tr>
+        <tr><td>Rate of progress</td><td class="n">15</td><td>—</td></tr>
+        <tr><td>Capital position</td><td class="n">10</td><td>—</td></tr>
+      </table>
+      <p>Composite = 20 × (0.22 P + 0.20 D + 0.18 B + 0.15 T + 0.15 R + 0.10 K). All 3s = 60.0.</p>
+    </div>
+    <div>
+      <table>
+        <tr><th>Composite</th><th>Card action</th></tr>
+        <tr><td class="n">Gate fail, graveyard, floor, or &lt; 45</td><td>STOP</td></tr>
+        <tr><td class="n">45 – 63.9, or 64+ with fewer than two axes at 4</td><td>WATCH</td></tr>
+        <tr><td class="n">64 – 77.9 with two axes at 4</td><td>DIVE</td></tr>
+        <tr><td class="n">78+ with floors clear</td><td>SITE, provisional until the cost floor, a second score and the human read exist</td></tr>
+      </table>
+      <p>Human intuition: a named expert reads the finished card and records −2 to +2 with two paragraphs. A ±2 moves the action one step; ±1 breaks a tie within three points of a line. Nothing moves past Gate 0, the graveyard, or a hard floor. The read is stored by name and tested against the twelve-month outcome log.</p>
+    </div>
+  </div>
+</details>
+<script src="/desk/triage/grades.js"></script>
+<script src="/desk/triage/app.js"></script>
+</body>
+</html>
