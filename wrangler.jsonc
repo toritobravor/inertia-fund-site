@@ -1,8 +1,22 @@
-// Cloudflare Workers configuration — static site served from ./public, with a Worker in front of /desk/.
+// Cloudflare Workers configuration — static site served from ./public, with the Worker in
+// front of every request so it can enforce the hostname split.
 // Docs: https://developers.cloudflare.com/workers/static-assets/
 //
-// Secrets (set in the Cloudflare dashboard → Workers → inertia-fund-site → Settings → Variables and Secrets):
-//   DESK_PASSWORD   the shared password for /desk/. Never commit it here.
+// Hostnames (Workers → inertia-fund-site → Settings → Domains & Routes → Custom Domain):
+//   inertia.fund, www.inertia.fund   public site
+//   triage.inertia.fund              partners' triage desk, behind Cloudflare Access
+//
+// The workers.dev route must be DISABLED. It is not covered by the Access policy, so leaving
+// it on would be a way around the front door. The Worker also refuses unknown hostnames.
+//
+// Variables (Settings → Variables and Secrets):
+//   CF_ACCESS_TEAM_DOMAIN  plain text, e.g. https://inertiafund.cloudflareaccess.com
+//   CF_ACCESS_AUD          plain text, the Application Audience tag from the Access application
+// Secrets:
+//   DESK_ROLES             JSON mapping verified email to { name, role }
+//
+// DESK_PASSWORD and DESK_USERS are no longer read by the Worker. Delete them once the new
+// hostname is confirmed working.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "inertia-fund-site",
@@ -13,7 +27,9 @@
     "binding": "ASSETS",
     "html_handling": "auto-trailing-slash",
     "not_found_handling": "404-page",
-    "run_worker_first": ["/desk", "/desk/*"]
+    // Previously ["/desk", "/desk/*"]. The Worker now needs to see every request, because the
+    // decision it makes first is which hostname the request arrived on.
+    "run_worker_first": ["/*"]
   },
   "kv_namespaces": [
     { "binding": "DESK_KV", "id": "81eb0ef89e134b3889d3b2ae54851882" }
