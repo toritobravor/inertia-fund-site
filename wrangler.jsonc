@@ -1,14 +1,23 @@
-// Cloudflare Workers configuration — static site served from ./public
+// Cloudflare Workers configuration — static site served from ./public, with a Worker in front of /desk/.
 // Docs: https://developers.cloudflare.com/workers/static-assets/
+//
+// Secrets (set in the Cloudflare dashboard → Workers → inertia-fund-site → Settings → Variables and Secrets):
+//   DESK_PASSWORD   the shared password for /desk/. Never commit it here.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "inertia-fund-site",
+  "main": "src/worker.js",
   "compatibility_date": "2026-08-01",
   "assets": {
     "directory": "./public",
+    "binding": "ASSETS",
     "html_handling": "auto-trailing-slash",
-    "not_found_handling": "404-page"
+    "not_found_handling": "404-page",
+    "run_worker_first": ["/desk", "/desk/*"]
   },
+  "kv_namespaces": [
+    { "binding": "DESK_KV", "id": "81eb0ef89e134b3889d3b2ae54851882" }
+  ],
   "observability": {
     "enabled": true
   }
