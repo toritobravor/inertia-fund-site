@@ -139,52 +139,79 @@ function init() {
     rotor.add(ring);
   }
 
-  // ---- the step-up transformer, further along the axis ----
-  const xf = new THREE.Group(); xf.position.set(19.0, -1.0, 0); scene.add(xf);
-  function roundedBox(w, h, d, r) {
-    const s = new THREE.Shape();
-    s.moveTo(-w / 2 + r, -h / 2); s.lineTo(w / 2 - r, -h / 2); s.quadraticCurveTo(w / 2, -h / 2, w / 2, -h / 2 + r);
-    s.lineTo(w / 2, h / 2 - r); s.quadraticCurveTo(w / 2, h / 2, w / 2 - r, h / 2);
-    s.lineTo(-w / 2 + r, h / 2); s.quadraticCurveTo(-w / 2, h / 2, -w / 2, h / 2 - r);
-    s.lineTo(-w / 2, -h / 2 + r); s.quadraticCurveTo(-w / 2, -h / 2, -w / 2 + r, -h / 2);
-    const g = new THREE.ExtrudeGeometry(s, { depth: d, bevelEnabled: true, bevelThickness: 0.04, bevelSize: 0.04, bevelSegments: 3, curveSegments: 6 });
-    g.translate(0, 0, -d / 2); return g;
-  }
-  const plinth = new THREE.Mesh(new THREE.BoxGeometry(7.5, 0.5, 4.6), concrete); plinth.position.y = -1.85; xf.add(plinth);
-  const tank = new THREE.Mesh(roundedBox(4.6, 3.2, 2.4, 0.12), paint); xf.add(tank);
-  const lid = new THREE.Mesh(roundedBox(4.7, 0.16, 2.5, 0.05), darkSteel); lid.position.y = 1.68; xf.add(lid);
-  // Two radiator banks per long side: thin panels on header pipes, standing off the tank.
-  const panelGeo = new THREE.BoxGeometry(0.035, 2.4, 0.9);
-  for (const side of [-1, 1]) for (const bank of [-1.15, 1.15]) {
-    const n = 14, inst = new THREE.InstancedMesh(panelGeo, darkSteel, n), m = new THREE.Matrix4();
-    for (let i = 0; i < n; i++) { m.makeTranslation(bank - 0.585 + i * 0.09, -0.15, side * 1.85); inst.setMatrixAt(i, m); }
-    inst.instanceMatrix.needsUpdate = true; xf.add(inst);
-    for (const y of [1.1, -1.4]) {
-      const hdr = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 1.5, 24), darkSteel);
-      hdr.rotation.z = Math.PI / 2; hdr.position.set(bank, y, side * 1.85); xf.add(hdr);
-      const stub = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.7, 24), darkSteel);
-      stub.rotation.x = Math.PI / 2; stub.position.set(bank, y, side * 1.5); xf.add(stub);
-    }
-  }
-  // Conservator on top, rear, with its pipe
-  const cons = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 3.4, 48), paint);
-  cons.rotation.z = Math.PI / 2; cons.position.set(0.3, 2.55, -0.72); xf.add(cons);
-  const consPipe = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.8, 16), darkSteel);
-  consPipe.position.set(-1.2, 2.1, -0.72); xf.add(consPipe);
-  // Three HV bushings: tapered porcelain with alternating sheds, a steel flange and a cap
-  for (let k = -1; k <= 1; k++) {
-    const bx = k * 1.35, bz = 0.35, y0 = 1.76;
-    const flange = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.40, 0.14, 40), darkSteel); flange.position.set(bx, y0 + 0.07, bz); xf.add(flange);
-    const core = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.14, 2.6, 32), porcelain); core.position.set(bx, y0 + 1.45, bz); xf.add(core);
-    for (let s = 0; s < 16; s++) {
-      const big = s % 2 === 0;
-      const shed = new THREE.Mesh(new THREE.CylinderGeometry(big ? 0.27 : 0.22, 0.13, 0.07, 40), porcelain);
-      shed.position.set(bx, y0 + 0.30 + s * 0.15, bz); xf.add(shed);
-    }
-    const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.17, 0.26, 32), bladeSteel); cap.position.set(bx, y0 + 2.85, bz); xf.add(cap);
-    const terminal = new THREE.Mesh(new THREE.SphereGeometry(0.11, 24, 16), bladeSteel); terminal.position.set(bx, y0 + 3.05, bz); xf.add(terminal);
-  }
-  // The coupling from the turbine toward the generator/transformer: the path itself.
+  // ---- Three-stage progression: Lab → Scale → Asset ----
+  // Replace the transformer with an abstract representation of the three investment groups.
+  // Three vertical marker posts at different positions along the axis, representing the maturity continuum.
+  
+  const progression = new THREE.Group(); scene.add(progression);
+  
+  // Marker materials for the three groups
+  const earlyMat = new THREE.MeshPhysicalMaterial({ color: 0xCC4318, metalness: 0.6, roughness: 0.3, emissive: 0xCC4318, emissiveIntensity: 0.15 }); // Arc
+  const accelMat = new THREE.MeshPhysicalMaterial({ color: 0x0D8C7A, metalness: 0.6, roughness: 0.3, emissive: 0x0D8C7A, emissiveIntensity: 0.2 }); // Teal (brighter)
+  const consolMat = new THREE.MeshPhysicalMaterial({ color: 0xB8860B, metalness: 0.6, roughness: 0.3, emissive: 0xB8860B, emissiveIntensity: 0.15 }); // Ochre
+  
+  // Stage 1: Early (Lab) - position 12, shorter marker
+  const early = new THREE.Group();
+  early.position.set(12, 0, 0);
+  const earlyPost = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.18, 3.5, 32), earlyMat);
+  earlyPost.position.y = 1.75;
+  early.add(earlyPost);
+  const earlyBase = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.4, 0.3, 32), darkSteel);
+  earlyBase.position.y = 0.15;
+  early.add(earlyBase);
+  // Top cap
+  const earlyCap = new THREE.Mesh(new THREE.SphereGeometry(0.22, 24, 16), earlyMat);
+  earlyCap.position.y = 3.6;
+  early.add(earlyCap);
+  progression.add(early);
+  
+  // Stage 2: Accelerated (Scale) - position 19, tallest marker (flagship)
+  const accel = new THREE.Group();
+  accel.position.set(19, 0, 0);
+  const accelPost = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 5.0, 32), accelMat);
+  accelPost.position.y = 2.5;
+  accel.add(accelPost);
+  const accelBase = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.45, 0.35, 32), darkSteel);
+  accelBase.position.y = 0.175;
+  accel.add(accelBase);
+  // Top cap (larger for flagship)
+  const accelCap = new THREE.Mesh(new THREE.SphereGeometry(0.28, 24, 16), accelMat);
+  accelCap.position.y = 5.15;
+  accel.add(accelCap);
+  // Add a subtle ring around the flagship marker
+  const accelRing = new THREE.Mesh(new THREE.TorusGeometry(0.35, 0.04, 16, 32), accelMat);
+  accelRing.position.y = 3.0;
+  accelRing.rotation.x = Math.PI / 2;
+  accel.add(accelRing);
+  progression.add(accel);
+  
+  // Stage 3: Consolidated (Asset) - position 26, medium height
+  const consol = new THREE.Group();
+  consol.position.set(26, 0, 0);
+  const consolPost = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.19, 4.0, 32), consolMat);
+  consolPost.position.y = 2.0;
+  consol.add(consolPost);
+  const consolBase = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.42, 0.32, 32), darkSteel);
+  consolBase.position.y = 0.16;
+  consol.add(consolBase);
+  // Top cap
+  const consolCap = new THREE.Mesh(new THREE.SphereGeometry(0.24, 24, 16), consolMat);
+  consolCap.position.y = 4.2;
+  consol.add(consolCap);
+  progression.add(consol);
+  
+  // Connecting path between markers - subtle guide rails
+  const pathMat = new THREE.MeshStandardMaterial({ color: 0x4a5258, metalness: 0.8, roughness: 0.4 });
+  const path1 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 7, 16), pathMat);
+  path1.rotation.z = Math.PI / 2;
+  path1.position.set(15.5, 0.2, 0.3);
+  progression.add(path1);
+  const path2 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 7, 16), pathMat);
+  path2.rotation.z = Math.PI / 2;
+  path2.position.set(22.5, 0.2, 0.3);
+  progression.add(path2);
+  
+  // The coupling from the turbine continues forward
   const coupling = new THREE.Mesh(latheX([[0, 0], [0, 0.22], [10.4, 0.22], [10.4, 0.34], [10.8, 0.34], [10.8, 0]], 64), rotorSteel);
   coupling.position.set(5.45, 0, 0); scene.add(coupling);
 
@@ -195,11 +222,11 @@ function init() {
     { u: 0.20, pos: [-0.5,  0.8,  5.5], look: [ 0.0,  0.0, 0], exp: 0.24 },  // Moment A (dark)
     { u: 0.30, pos: [ 2.8,  1.5,  7.0], look: [ 1.0, -0.2, 0], exp: 0.9 },   // Rule
     { u: 0.40, pos: [ 5.5,  2.2,  9.0], look: [ 3.5,  0.1, 0], exp: 0.22 },  // Moment B (dark)
-    { u: 0.50, pos: [12.0,  3.0, 11.5], look: [10.0,  0.3, 0], exp: 0.9 },   // Three Groups
-    { u: 0.60, pos: [18.5,  2.8, 13.0], look: [16.5,  0.2, 0], exp: 0.9 },   // Value Chain
-    { u: 0.75, pos: [24.5,  3.5, 14.5], look: [19.0,  0.0, 0], exp: 0.88 },  // Record
-    { u: 0.88, pos: [29.0,  4.2, 16.5], look: [18.5, -0.3, 0], exp: 0.42 },  // Evidence
-    { u: 1.00, pos: [32.5,  5.0, 18.5], look: [17.0, -0.5, 0], exp: 0.32 }   // Contact
+    { u: 0.50, pos: [28.0,  5.5, 20.0], look: [12.0,  1.5, 0], exp: 0.18 },  // Three Groups (dimmed, high angle to stay out of way)
+    { u: 0.60, pos: [24.0,  4.5, 17.0], look: [19.0,  2.0, 0], exp: 0.35 },  // Value Chain (show progression markers)
+    { u: 0.75, pos: [30.5,  5.5, 19.5], look: [26.0,  1.8, 0], exp: 0.28 },  // Record (dimmed for readability)
+    { u: 0.88, pos: [33.0,  6.0, 21.0], look: [28.0,  0.5, 0], exp: 0.22 },  // Evidence (dimmed)
+    { u: 1.00, pos: [35.5,  6.5, 22.5], look: [29.0, -0.2, 0], exp: 0.18 }   // Contact (very dim)
   ];
   const tmpPos = new THREE.Vector3(), tmpLook = new THREE.Vector3();
   const smooth = t => t < 0 ? 0 : t > 1 ? 1 : t * t * (3 - 2 * t);

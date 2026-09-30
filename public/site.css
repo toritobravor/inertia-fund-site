@@ -31,8 +31,10 @@ main.v2 { position: relative; z-index: 1; }
 /* screens */
 .screen { min-height: 100vh; min-height: 100svh; display: flex; align-items: flex-end; padding: 0 0 clamp(56px, 10vh, 120px); position: relative; }
 .screen .wrap { width: 100%; }
-.screen .copy { max-width: 40ch; }
+.screen .copy { max-width: 40ch; background: rgba(21,25,29,.88); padding: clamp(24px, 3vw, 36px); border-radius: 4px; 
+                backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
 .screen.mid { align-items: center; }
+.screen.mid .wrap { background: rgba(21,25,29,.85); padding: clamp(40px, 6vh, 72px) clamp(32px, 5vw, 72px); border-radius: 6px; }
 .screen h1, .screen h2 { color: var(--bone); font-weight: 400; }
 .screen h1 { font-size: clamp(26px, 3.1vw, 42px); line-height: 1.18; letter-spacing: -.005em; max-width: 26ch; }
 .screen h2 { font-size: clamp(26px, 3.0vw, 40px); line-height: 1.16; letter-spacing: -.005em; max-width: 24ch; margin-bottom: 20px; }
@@ -41,7 +43,7 @@ main.v2 { position: relative; z-index: 1; }
 .v2 .kicker b { color: var(--arc); font-weight: 400; }
 
 .hero { align-items: center; }
-.hero .lockup { font-size: clamp(52px, 8vw, 100px); color: var(--bone); margin-bottom: clamp(32px, 5vh, 56px); }
+.hero .lockup { font-size: clamp(36px, 5.5vw, 68px); color: var(--bone); margin-bottom: clamp(28px, 4.5vh, 48px); }
 .hero .wordmark { color: var(--bone); }
 .hero .wordmark .box { background: var(--bone); color: var(--ink); }
 .hero .copy { max-width: 36ch; }
@@ -89,7 +91,7 @@ main.v2 { position: relative; z-index: 1; }
 .dark-list .num sup { font-size: .4em; vertical-align: .9em; color: var(--ink-4); margin-left: .1em; }
 .dark-list .what { display: block; font-family: var(--serif); font-size: 18px; color: var(--bone); margin: 14px 0 6px; line-height: 1.35; }
 .dark-list .how { display: block; font-size: 13.5px; color: var(--ink-4); line-height: 1.5; }
-.end { padding: clamp(80px, 12vh, 140px) 0 60px; }
+.end { padding: clamp(80px, 12vh, 140px) 0 60px; background: rgba(21,25,29,.85); }
 .end .contact { font-family: var(--serif); font-size: clamp(26px, 3vw, 40px); color: var(--bone); line-height: 1.25; }
 .end .contact a { border-bottom: 1.4px solid var(--arc); color: var(--bone); }
 .legal { font-size: 12.5px; color: var(--ink-3); max-width: 84ch; line-height: 1.55; margin-top: 60px; }
@@ -119,16 +121,19 @@ main.v2 { position: relative; z-index: 1; }
 
 /* ---- Three Groups section ---- */
 .screen.wide { min-height: auto; padding: clamp(80px, 12vh, 140px) 0; }
-.section-intro { max-width: 50ch; margin-bottom: clamp(48px, 8vh, 80px); }
+.section-intro { max-width: 50ch; margin-bottom: clamp(48px, 8vh, 80px); 
+                 background: rgba(21,25,29,.88); padding: clamp(28px, 4vw, 40px); border-radius: 6px;
+                 backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
 .intro-text { font-size: clamp(18px, 1.6vw, 21px); line-height: 1.5; color: var(--ink-4); margin-top: 24px; }
 
 .groups-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(24px, 3vw, 40px); margin-bottom: clamp(56px, 8vh, 88px); }
 
-.group-card { background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.08); border-radius: 4px; padding: clamp(24px, 3vw, 32px); 
-              display: flex; flex-direction: column; gap: 20px; transition: border-color .3s, background .3s; }
-.group-card:hover { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.14); }
-.group-card.flagship { border-color: rgba(13,140,122,.3); background: rgba(13,140,122,.04); }
-.group-card.flagship:hover { border-color: rgba(13,140,122,.5); background: rgba(13,140,122,.07); }
+.group-card { background: rgba(21,25,29,.92); border: 1px solid rgba(255,255,255,.12); border-radius: 4px; padding: clamp(24px, 3vw, 32px); 
+              display: flex; flex-direction: column; gap: 20px; transition: border-color .3s, background .3s; 
+              backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.group-card:hover { background: rgba(21,25,29,.96); border-color: rgba(255,255,255,.18); }
+.group-card.flagship { border-color: rgba(13,140,122,.4); background: rgba(21,25,29,.94); }
+.group-card.flagship:hover { border-color: rgba(13,140,122,.6); background: rgba(21,25,29,.97); }
 
 .group-header { display: flex; flex-direction: column; gap: 8px; }
 .group-label { font-family: var(--serif); font-size: clamp(22px, 2.2vw, 28px); color: var(--bone); line-height: 1.2; }
