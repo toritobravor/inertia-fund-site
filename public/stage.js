@@ -139,94 +139,23 @@ function init() {
     rotor.add(ring);
   }
 
-  // ---- Three-stage progression: Lab → Scale → Asset ----
-  // Replace the transformer with an abstract representation of the three investment groups.
-  // Three vertical marker posts at different positions along the axis, representing the maturity continuum.
-  
-  const progression = new THREE.Group(); scene.add(progression);
-  
-  // Marker materials for the three groups
-  const earlyMat = new THREE.MeshPhysicalMaterial({ color: 0xCC4318, metalness: 0.6, roughness: 0.3, emissive: 0xCC4318, emissiveIntensity: 0.15 }); // Arc
-  const accelMat = new THREE.MeshPhysicalMaterial({ color: 0x0D8C7A, metalness: 0.6, roughness: 0.3, emissive: 0x0D8C7A, emissiveIntensity: 0.2 }); // Teal (brighter)
-  const consolMat = new THREE.MeshPhysicalMaterial({ color: 0xB8860B, metalness: 0.6, roughness: 0.3, emissive: 0xB8860B, emissiveIntensity: 0.15 }); // Ochre
-  
-  // Stage 1: Early (Lab) - position 12, shorter marker
-  const early = new THREE.Group();
-  early.position.set(12, 0, 0);
-  const earlyPost = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.18, 3.5, 32), earlyMat);
-  earlyPost.position.y = 1.75;
-  early.add(earlyPost);
-  const earlyBase = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.4, 0.3, 32), darkSteel);
-  earlyBase.position.y = 0.15;
-  early.add(earlyBase);
-  // Top cap
-  const earlyCap = new THREE.Mesh(new THREE.SphereGeometry(0.22, 24, 16), earlyMat);
-  earlyCap.position.y = 3.6;
-  early.add(earlyCap);
-  progression.add(early);
-  
-  // Stage 2: Accelerated (Scale) - position 19, tallest marker (flagship)
-  const accel = new THREE.Group();
-  accel.position.set(19, 0, 0);
-  const accelPost = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 5.0, 32), accelMat);
-  accelPost.position.y = 2.5;
-  accel.add(accelPost);
-  const accelBase = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.45, 0.35, 32), darkSteel);
-  accelBase.position.y = 0.175;
-  accel.add(accelBase);
-  // Top cap (larger for flagship)
-  const accelCap = new THREE.Mesh(new THREE.SphereGeometry(0.28, 24, 16), accelMat);
-  accelCap.position.y = 5.15;
-  accel.add(accelCap);
-  // Add a subtle ring around the flagship marker
-  const accelRing = new THREE.Mesh(new THREE.TorusGeometry(0.35, 0.04, 16, 32), accelMat);
-  accelRing.position.y = 3.0;
-  accelRing.rotation.x = Math.PI / 2;
-  accel.add(accelRing);
-  progression.add(accel);
-  
-  // Stage 3: Consolidated (Asset) - position 26, medium height
-  const consol = new THREE.Group();
-  consol.position.set(26, 0, 0);
-  const consolPost = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.19, 4.0, 32), consolMat);
-  consolPost.position.y = 2.0;
-  consol.add(consolPost);
-  const consolBase = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.42, 0.32, 32), darkSteel);
-  consolBase.position.y = 0.16;
-  consol.add(consolBase);
-  // Top cap
-  const consolCap = new THREE.Mesh(new THREE.SphereGeometry(0.24, 24, 16), consolMat);
-  consolCap.position.y = 4.2;
-  consol.add(consolCap);
-  progression.add(consol);
-  
-  // Connecting path between markers - subtle guide rails
-  const pathMat = new THREE.MeshStandardMaterial({ color: 0x4a5258, metalness: 0.8, roughness: 0.4 });
-  const path1 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 7, 16), pathMat);
-  path1.rotation.z = Math.PI / 2;
-  path1.position.set(15.5, 0.2, 0.3);
-  progression.add(path1);
-  const path2 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 7, 16), pathMat);
-  path2.rotation.z = Math.PI / 2;
-  path2.position.set(22.5, 0.2, 0.3);
-  progression.add(path2);
-  
   // The coupling from the turbine continues forward
   const coupling = new THREE.Mesh(latheX([[0, 0], [0, 0.22], [10.4, 0.22], [10.4, 0.34], [10.8, 0.34], [10.8, 0]], 64), rotorSteel);
   coupling.position.set(5.45, 0, 0); scene.add(coupling);
 
   // ---- camera keyframes along the scroll (u = 0..1 over the whole page): pos, look, exposure ----
   const KEYS = [
-    { u: 0.00, pos: [ 9.5,  3.2, 11.5], look: [-2.0, -0.8, 0], exp: 0.88 },  // Hero (turbine lower/left of headline)
+    { u: 0.00, pos: [ 9.5,  3.2, 11.5], look: [-2.0, -0.8, 0], exp: 0.88 },  // Hero
     { u: 0.10, pos: [ 4.0,  1.2,  6.2], look: [-2.6, -0.4, 0], exp: 0.9 },   // Constraint
     { u: 0.20, pos: [-0.5,  0.8,  5.5], look: [ 0.0,  0.0, 0], exp: 0.24 },  // Moment A (dark)
     { u: 0.30, pos: [ 2.8,  1.5,  7.0], look: [ 1.0, -0.2, 0], exp: 0.9 },   // Rule
     { u: 0.40, pos: [ 5.5,  2.2,  9.0], look: [ 3.5,  0.1, 0], exp: 0.22 },  // Moment B (dark)
-    { u: 0.50, pos: [28.0,  5.5, 20.0], look: [12.0,  1.5, 0], exp: 0.18 },  // Three Groups (dimmed, high angle)
-    { u: 0.60, pos: [24.0,  4.5, 17.0], look: [19.0,  2.0, 0], exp: 0.35 },  // Value Chain (show progression markers)
-    { u: 0.75, pos: [30.5,  5.5, 19.5], look: [26.0,  1.8, 0], exp: 0.28 },  // Record (dimmed)
-    { u: 0.88, pos: [33.0,  6.0, 21.0], look: [28.0,  0.5, 0], exp: 0.22 },  // Evidence (dimmed)
-    { u: 1.00, pos: [35.5,  6.5, 22.5], look: [29.0, -0.2, 0], exp: 0.18 }   // Contact (very dim)
+    { u: 0.50, pos: [18.0,  6.0, 18.0], look: [19.0,  3.0, 0], exp: 0.12 },  // Progression Centerpiece (VERY DIM, high angle)
+    { u: 0.60, pos: [28.0,  5.5, 20.0], look: [12.0,  1.5, 0], exp: 0.18 },  // Three Groups (dimmed, high angle)
+    { u: 0.70, pos: [24.0,  4.5, 17.0], look: [19.0,  2.0, 0], exp: 0.35 },  // Value Chain
+    { u: 0.80, pos: [30.5,  5.5, 19.5], look: [26.0,  1.8, 0], exp: 0.28 },  // Record
+    { u: 0.90, pos: [33.0,  6.0, 21.0], look: [28.0,  0.5, 0], exp: 0.22 },  // Evidence
+    { u: 1.00, pos: [35.5,  6.5, 22.5], look: [29.0, -0.2, 0], exp: 0.18 }   // Contact
   ];
   const tmpPos = new THREE.Vector3(), tmpLook = new THREE.Vector3();
   const smooth = t => t < 0 ? 0 : t > 1 ? 1 : t * t * (3 - 2 * t);
