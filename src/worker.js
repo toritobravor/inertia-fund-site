@@ -15,6 +15,10 @@
 //   CF_ACCESS_AUD          plain var, the Application Audience tag of the Access application
 //   DESK_ROLES             secret, JSON: { "jorge@example.com": { "name": "Jorge Camara", "role": "partner" }, ... }
 //                          role is "partner" (their read governs the card) or "expert" (advisory)
+//   NOTION_TOKEN           secret, the Notion integration token for reading Early Stage Grades
+//   REFRESH_KEY            secret, the key to force-refresh the Notion grades cache
+
+import { queryGrades, transformNotionPages } from "./notion-grades.js";
 
 const TRIAGE_HOST = "triage.inertia.fund";
 const PUBLIC_HOSTS = new Set(["inertia.fund", "www.inertia.fund"]);
@@ -222,6 +226,12 @@ function loadRoles(env) {
 async function handleApi(request, env, url, who) {
   const parts = url.pathname.slice("/desk/api/".length).split("/").filter(Boolean);
   if (parts[0] === "me") return json(who);
+  
+  // /desk/api/grades — Notion Early Stage Grades, cached for 5 minutes
+  if (parts[0] === "grades") {
+    return handleGrades(request, env, url);
+  }
+  
   if (parts[0] !== "reads") return json({ error: "not found" }, 404);
   const id = parts[1];
 
@@ -272,6 +282,54 @@ async function handleApi(request, env, url, who) {
     return json({ ok: true });
   }
   return json({ error: "method" }, 405);
+}
+
+// ---------- grades API (Notion Early Stage Grades database)
+// Serves the grades live from Notion, with a 5-minute cache.
+// If Notion is unreachable or the token is missing, the triage page should fall back to the
+// committed grades.js file. This endpoint only returns rows where Published = true.
+
+const GRADES_CACHE_KEY = "notion:grades";
+const GRADES_CACHE_TTL_SEC = 300; // 5 minutes
+
+async function handleGrades(request, env, url) {
+  // Query param ?refresh=<key> forces a cache refresh if the key matches REFRESH_KEY
+  const forceRefresh = url.searchParams.get("refresh") === env.REFRESH_KEY && env.REFRESH_KEY;
+
+  if (!env.NOTION_TOKEN) {
+    return json({ error: "NOTION_TOKEN not configured", fallback: true }, 503);
+  }
+
+  let grades = null;
+
+  // Try KV cache first unless force refresh
+  if (!forceRefresh && env.DESK_KV) {
+    const cached = await env.DESK_KV.get(GRADES_CACHE_KEY, "json");
+    if (cached && cached.at && Date.now() - cached.at < GRADES_CACHE_TTL_SEC * 1000) {
+      grades = cached.data;
+    }
+  }
+
+  // Fetch from Notion if not cached
+  if (!grades) {
+    try {
+      const pages = await queryGrades(env.NOTION_TOKEN, env.GRADES_PUBLISHED_PROPERTY || "Published");
+      grades = transformNotionPages(pages);
+
+      // Cache in KV
+      if (env.DESK_KV) {
+        await env.DESK_KV.put(GRADES_CACHE_KEY, JSON.stringify({ data: grades, at: Date.now() }), {
+          expirationTtl: GRADES_CACHE_TTL_SEC * 2
+        });
+      }
+    } catch (err) {
+      return json({ error: "Failed to fetch from Notion", message: err.message, fallback: true }, 502);
+    }
+  }
+
+  const res = json({ grades, cached_at: Date.now() });
+  res.headers.set("Cache-Control", `private, max-age=${GRADES_CACHE_TTL_SEC}`);
+  return res;
 }
 
 // ---------- helpers

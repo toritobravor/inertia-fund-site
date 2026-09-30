@@ -1,7 +1,30 @@
 window.__DESK_MODE__='site';
-(function(){
+(async function(){
 const MODE = window.__DESK_MODE__ || "artifact";   // "site" (login, per-user API) or "artifact" (claude.ai shared db, typed name)
-const DATA = window.__GRADES__ || JSON.parse(document.getElementById('data').textContent);
+
+// Load grades from API or fall back to static file
+let DATA = null;
+let fallbackToStatic = false;
+try {
+  const res = await fetch("/desk/api/grades", { credentials: "same-origin", cache: "no-store" });
+  if (res.ok) {
+    const body = await res.json();
+    DATA = body.grades || [];
+    console.log("Loaded", DATA.length, "grades from Notion API");
+  } else {
+    fallbackToStatic = true;
+  }
+} catch (err) {
+  console.error("Failed to load grades from API:", err);
+  fallbackToStatic = true;
+}
+
+if (fallbackToStatic || !DATA) {
+  // Fall back to static grades.js if it was loaded
+  DATA = window.__GRADES__ || [];
+  console.log("Using fallback static grades:", DATA.length, "entries");
+}
+
 const AX = [["P","Physics retired",22],["D","Path to first unit",20],["R","Rate of progress",15],["T","Team that has built",15],["B","Buyer and license",18],["K","Capital position",10]];
 const ORDER = {SITE:0,DIVE:1,WATCH:2,STOP:3};
 const STEP = ["STOP","WATCH","DIVE","SITE"];
@@ -279,6 +302,15 @@ document.getElementById('q').addEventListener('input',e=>{ query=e.target.value;
 renderChips();
 current = (DATA.slice().sort((a,b)=>ORDER[a.action]-ORDER[b.action]||(b.composite??-1)-(a.composite??-1))[0]||{}).id;
 renderAll();
+
+// Show a small notice if we fell back to static grades
+if (fallbackToStatic && DATA.length > 0) {
+  const notice = document.createElement('div');
+  notice.style.cssText = 'position:fixed;bottom:1rem;right:1rem;background:var(--warn);color:var(--ink);padding:0.5rem 1rem;border-radius:4px;font-size:0.875rem;opacity:0.9;z-index:1000;';
+  notice.textContent = 'Showing cached ranking (Notion unavailable)';
+  document.body.appendChild(notice);
+}
+
 store = MODE==="site" ? siteStore : artifactStore;
 store.init().then(renderAll).catch(e=>{ storeNote="Shared storage could not be reached ("+(e&&e.message||e)+")."; renderMain(); });
 })();
