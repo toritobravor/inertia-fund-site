@@ -106,13 +106,20 @@ const isTrue = (v, words) => v === true || (typeof v === "string" && words.test(
 const passes = (v) => isTrue(v, /^(yes|pass|passed|true)$/i);
 const graveyardHit = (v) => isTrue(v, /^(yes|hit|true)$/i);
 
-// Ticket URL points at the Scout ticket page; its 32-hex id is the id the static cards and the stored
-// human reads use. Fall back to the Grades page id when the Ticket URL is an external link.
+// The card id must equal the id the static cards and the stored human reads use. In order:
+//   1. a "#card=<id>" fragment on the Ticket URL (used when the ticket link is an external source page);
+//   2. the 32-hex page id of a Notion Ticket URL (the Scout ticket page);
+//   3. the Grades page id.
 function cardId(page, ticketURL) {
-  const m = /([0-9a-f]{32})(?:[?#].*)?$/i.exec(String(ticketURL || "").replace(/-/g, ""));
-  if (m && /notion\.(so|com)/i.test(ticketURL)) return m[1].toLowerCase();
+  const u = String(ticketURL || "");
+  const f = /[#&]card=([A-Za-z0-9_-]{1,64})/.exec(u);
+  if (f) return f[1];
+  const m = /([0-9a-f]{32})(?:[?#].*)?$/i.exec(u.replace(/-/g, ""));
+  if (m && /notion\.(so|com)/i.test(u)) return m[1].toLowerCase();
   return page.id.replace(/-/g, "");
 }
+// The source link shown on the card: the Ticket URL without the card-id fragment.
+const sourceLink = (u) => String(u || "").replace(/[#&]card=[A-Za-z0-9_-]{1,64}$/, "").replace(/#$/, "");
 
 // Composite: the 'Composite v2' formula when it has a value; else a number at the start of the Evidence
 // text ("Composite 64.4: ..." or "64.4 ..."); else 20 x weighted mean of the six axes = sum(w*s)/5.
@@ -180,7 +187,7 @@ export function mapNotionPageToCard(page) {
     people: prop(page, "People") || "",
     financing: prop(page, "Financing") || "",
     viability: prop(page, "Viability note") || "",
-    source: ticketURL,
+    source: sourceLink(ticketURL),
     status,
     gate: filterPass ? [true, true, true, true] : [false, true, true, true],
     gate_note: prop(page, "Gate note") || "",

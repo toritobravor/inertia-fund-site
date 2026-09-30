@@ -37,7 +37,9 @@ const ok = (c, m) => { console.log(c ? "ok  " : "FAIL", m); if (!c) fail++; };
 const [bl, dig, ari, elm] = rows.map(mapNotionPageToCard);
 
 ok(bl.id === "3ceea41b925881d1b484d0a5cd949f96", "id comes from the Notion Ticket URL (same id as the static card and stored reads)");
-ok(elm.id === "3ebea41b925881eab06ac50694c3b42b", "external Ticket URL falls back to the Grades page id");
+ok(elm.id === "3ebea41b925881eab06ac50694c3b42b", "external Ticket URL without a card fragment falls back to the Grades page id");
+const frag = mapNotionPageToCard(page("3dbea41b-9258-81b3-8173-e0fe70c80b12", "Arinna", { action: "STOP", filter: "NO", grave: "YES", ticket: "https://tomkat.stanford.edu/innovation-transfer/arinna#card=hc-arinna", date: "2026-09-14" }, [null, null, null, null, null, null]));
+ok(frag.id === "hc-arinna" && frag.source === "https://tomkat.stanford.edu/innovation-transfer/arinna", "#card= fragment sets the card id and is stripped from the source link");
 ok(bl.country === "Japan" && bl.sector === "Storage" && bl.pursue.startsWith("Graphite") && bl.stage_used === "Seed", "Country, Sector, What they sell, Stage");
 ok(bl.composite === 75 && bl.action === "DIVE" && bl.fours === 4 && !bl.floor && bl.status === "scored", "Blossom: composite from axes = 75, card DIVE");
 ok(bl.evidence.P.startsWith("a graphite") && bl.evidence.T.startsWith("Shinpei") && bl.evidence.K.startsWith("about JPY"), "labelled Evidence is split per axis");
