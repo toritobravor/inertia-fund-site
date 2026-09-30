@@ -190,14 +190,16 @@ function init() {
 
   // ---- camera keyframes along the scroll (u = 0..1 over the whole page): pos, look, exposure ----
   const KEYS = [
-    { u: 0.00, pos: [ 8.5,  2.4, 10.5], look: [-1.2, -0.5, 0], exp: 0.9 },
-    { u: 0.13, pos: [ 4.0,  1.2,  6.2], look: [-2.6, -0.4, 0], exp: 0.9 },
-    { u: 0.27, pos: [27.5,  3.4, 15.5], look: [19.0,  0.5, 0], exp: 0.9 },
-    { u: 0.41, pos: [24.5,  1.4, 11.0], look: [19.4,  0.7, 0], exp: 0.22 },
-    { u: 0.55, pos: [29.5,  3.8, 16.5], look: [18.6, -0.2, 0], exp: 0.9 },
-    { u: 0.69, pos: [28.5,  3.6, 14.5], look: [18.4, -0.2, 0], exp: 0.18 },
-    { u: 0.84, pos: [31.5,  4.6, 17.5], look: [17.0, -0.4, 0], exp: 0.55 },
-    { u: 1.00, pos: [33.5,  5.0, 19.5], look: [16.5, -0.4, 0], exp: 0.35 }
+    { u: 0.00, pos: [ 8.5,  2.4, 10.5], look: [-1.2, -0.5, 0], exp: 0.9 },   // Hero
+    { u: 0.10, pos: [ 4.0,  1.2,  6.2], look: [-2.6, -0.4, 0], exp: 0.9 },   // Constraint
+    { u: 0.20, pos: [-0.5,  0.8,  5.5], look: [ 0.0,  0.0, 0], exp: 0.24 },  // Moment A (dark)
+    { u: 0.30, pos: [ 2.8,  1.5,  7.0], look: [ 1.0, -0.2, 0], exp: 0.9 },   // Rule
+    { u: 0.40, pos: [ 5.5,  2.2,  9.0], look: [ 3.5,  0.1, 0], exp: 0.22 },  // Moment B (dark)
+    { u: 0.50, pos: [12.0,  3.0, 11.5], look: [10.0,  0.3, 0], exp: 0.9 },   // Three Groups
+    { u: 0.60, pos: [18.5,  2.8, 13.0], look: [16.5,  0.2, 0], exp: 0.9 },   // Value Chain
+    { u: 0.75, pos: [24.5,  3.5, 14.5], look: [19.0,  0.0, 0], exp: 0.88 },  // Record
+    { u: 0.88, pos: [29.0,  4.2, 16.5], look: [18.5, -0.3, 0], exp: 0.42 },  // Evidence
+    { u: 1.00, pos: [32.5,  5.0, 18.5], look: [17.0, -0.5, 0], exp: 0.32 }   // Contact
   ];
   const tmpPos = new THREE.Vector3(), tmpLook = new THREE.Vector3();
   const smooth = t => t < 0 ? 0 : t > 1 ? 1 : t * t * (3 - 2 * t);
