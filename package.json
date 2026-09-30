@@ -1,6 +1,7 @@
 {
   "name": "inertia-fund-site",
   "version": "0.1.0",
+  "type": "module",
   "private": true,
   "description": "Website for Inertia Fund — inertia.fund",
   "scripts": {

@@ -10,10 +10,13 @@
 // it on would be a way around the front door. The Worker also refuses unknown hostnames.
 //
 // Variables (Settings → Variables and Secrets):
-//   CF_ACCESS_TEAM_DOMAIN  plain text, e.g. https://inertiafund.cloudflareaccess.com
-//   CF_ACCESS_AUD          plain text, the Application Audience tag from the Access application
+//   CF_ACCESS_TEAM_DOMAIN       plain text, e.g. https://inertiafund.cloudflareaccess.com
+//   CF_ACCESS_AUD               plain text, the Application Audience tag from the Access application
+//   GRADES_PUBLISHED_PROPERTY   plain text (optional), the name of the checkbox property in Notion (default: "Published")
 // Secrets:
-//   DESK_ROLES             JSON mapping verified email to { name, role }
+//   DESK_ROLES       JSON mapping verified email to { name, role }
+//   NOTION_TOKEN     Notion integration token with read access to Early Stage Grades database
+//   REFRESH_KEY      Secret key to force-refresh the Notion grades cache via ?refresh=<key>
 //
 // DESK_PASSWORD and DESK_USERS are no longer read by the Worker. Delete them once the new
 // hostname is confirmed working.

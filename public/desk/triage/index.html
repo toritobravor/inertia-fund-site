@@ -57,7 +57,11 @@
     </div>
   </div>
 </details>
-<script src="/desk/triage/grades.js"></script>
+<script>
+// Define __GRADES__ as fallback in case the API is unavailable
+window.__GRADES__ = [];
+</script>
+<script src="/desk/triage/grades.js" onerror="console.warn('Static grades.js not loaded, will use API only')"></script>
 <script src="/desk/triage/app.js"></script>
 </body>
 </html>
