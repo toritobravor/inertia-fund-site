@@ -297,37 +297,64 @@ async function handleGrades(request, env, url) {
   const forceRefresh = url.searchParams.get("refresh") === env.REFRESH_KEY && env.REFRESH_KEY;
 
   if (!env.NOTION_TOKEN) {
+    console.error("NOTION_TOKEN not configured");
     return json({ error: "NOTION_TOKEN not configured", fallback: true }, 503);
   }
 
   let grades = null;
+  let fromCache = false;
 
   // Try KV cache first unless force refresh
   if (!forceRefresh && env.DESK_KV) {
-    const cached = await env.DESK_KV.get(GRADES_CACHE_KEY, "json");
-    if (cached && cached.at && Date.now() - cached.at < GRADES_CACHE_TTL_SEC * 1000) {
-      grades = cached.data;
+    try {
+      const cached = await env.DESK_KV.get(GRADES_CACHE_KEY, "json");
+      if (cached && cached.at && Date.now() - cached.at < GRADES_CACHE_TTL_SEC * 1000) {
+        grades = cached.data;
+        fromCache = true;
+        console.log(`Serving ${grades.length} grades from cache (age: ${Math.floor((Date.now() - cached.at) / 1000)}s)`);
+      }
+    } catch (err) {
+      console.error("Failed to read cache:", err.message);
+      // Continue to fetch from Notion
     }
   }
 
   // Fetch from Notion if not cached
   if (!grades) {
     try {
+      console.log("Fetching grades from Notion...");
       const pages = await queryGrades(env.NOTION_TOKEN, env.GRADES_PUBLISHED_PROPERTY || "Published");
       grades = transformNotionPages(pages);
+      console.log(`Fetched ${grades.length} grades from Notion (${pages.length} pages queried)`);
 
       // Cache in KV
       if (env.DESK_KV) {
-        await env.DESK_KV.put(GRADES_CACHE_KEY, JSON.stringify({ data: grades, at: Date.now() }), {
-          expirationTtl: GRADES_CACHE_TTL_SEC * 2
-        });
+        try {
+          await env.DESK_KV.put(GRADES_CACHE_KEY, JSON.stringify({ data: grades, at: Date.now() }), {
+            expirationTtl: GRADES_CACHE_TTL_SEC * 2
+          });
+          console.log("Cached grades in KV");
+        } catch (err) {
+          console.error("Failed to cache grades:", err.message);
+          // Continue serving the response
+        }
       }
     } catch (err) {
-      return json({ error: "Failed to fetch from Notion", message: err.message, fallback: true }, 502);
+      console.error("Failed to fetch from Notion:", err.message, err.stack);
+      return json({ 
+        error: "Failed to fetch from Notion", 
+        message: err.message, 
+        fallback: true 
+      }, 502);
     }
   }
 
-  const res = json({ grades, cached_at: Date.now() });
+  const res = json({ 
+    grades, 
+    count: grades.length,
+    cached: fromCache,
+    cached_at: Date.now() 
+  });
   res.headers.set("Cache-Control", `private, max-age=${GRADES_CACHE_TTL_SEC}`);
   return res;
 }

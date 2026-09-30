@@ -119,13 +119,14 @@ export function mapNotionPageToCard(page) {
   const floor = scores.P < 2 || scores.D < 2;
 
   // Evidence fields (text for each axis)
+  // Try multiple possible property names for evidence fields
   const evidence = {
-    P: prop(page, "Physics retired evidence") || "",
-    D: prop(page, "Path evidence") || "",
-    B: prop(page, "Buyer evidence") || "",
-    T: prop(page, "Team evidence") || "",
-    R: prop(page, "Rate evidence") || "",
-    K: prop(page, "Capital evidence") || ""
+    P: prop(page, "Physics retired evidence") || prop(page, "P evidence") || prop(page, "Physics evidence") || "",
+    D: prop(page, "Path evidence") || prop(page, "D evidence") || prop(page, "Path to first unit evidence") || "",
+    B: prop(page, "Buyer evidence") || prop(page, "B evidence") || prop(page, "Buyer & license evidence") || "",
+    T: prop(page, "Team evidence") || prop(page, "T evidence") || prop(page, "Team that has built evidence") || "",
+    R: prop(page, "Rate evidence") || prop(page, "R evidence") || prop(page, "Rate of progress evidence") || "",
+    K: prop(page, "Capital evidence") || prop(page, "K evidence") || prop(page, "Capital position evidence") || ""
   };
 
   // Determine status

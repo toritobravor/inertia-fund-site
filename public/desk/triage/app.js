@@ -5,24 +5,34 @@ const MODE = window.__DESK_MODE__ || "artifact";   // "site" (login, per-user AP
 // Load grades from API or fall back to static file
 let DATA = null;
 let fallbackToStatic = false;
+let apiErrorMessage = null;
+
 try {
   const res = await fetch("/desk/api/grades", { credentials: "same-origin", cache: "no-store" });
   if (res.ok) {
     const body = await res.json();
     DATA = body.grades || [];
-    console.log("Loaded", DATA.length, "grades from Notion API");
+    console.log(`✓ Loaded ${DATA.length} grades from ${body.cached ? 'cache' : 'Notion API'}`);
   } else {
+    const errBody = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+    apiErrorMessage = errBody.error || `HTTP ${res.status}`;
+    console.warn("API error:", apiErrorMessage);
     fallbackToStatic = true;
   }
 } catch (err) {
+  apiErrorMessage = err.message;
   console.error("Failed to load grades from API:", err);
   fallbackToStatic = true;
 }
 
-if (fallbackToStatic || !DATA) {
+if (fallbackToStatic || !DATA || DATA.length === 0) {
   // Fall back to static grades.js if it was loaded
   DATA = window.__GRADES__ || [];
-  console.log("Using fallback static grades:", DATA.length, "entries");
+  if (DATA.length > 0) {
+    console.log(`ℹ Using fallback static grades: ${DATA.length} entries`);
+  } else {
+    console.error("No grades available from API or static file");
+  }
 }
 
 const AX = [["P","Physics retired",22],["D","Path to first unit",20],["R","Rate of progress",15],["T","Team that has built",15],["B","Buyer and license",18],["K","Capital position",10]];
@@ -306,8 +316,8 @@ renderAll();
 // Show a small notice if we fell back to static grades
 if (fallbackToStatic && DATA.length > 0) {
   const notice = document.createElement('div');
-  notice.style.cssText = 'position:fixed;bottom:1rem;right:1rem;background:var(--warn);color:var(--ink);padding:0.5rem 1rem;border-radius:4px;font-size:0.875rem;opacity:0.9;z-index:1000;';
-  notice.textContent = 'Showing cached ranking (Notion unavailable)';
+  notice.style.cssText = 'position:fixed;bottom:1rem;right:1rem;background:var(--warn,#fef3cd);color:var(--ink,#000);padding:0.75rem 1.25rem;border-radius:6px;font-size:0.875rem;box-shadow:0 2px 8px rgba(0,0,0,0.1);z-index:1000;max-width:300px;';
+  notice.innerHTML = `<strong>Showing cached ranking</strong><br><small>${apiErrorMessage || 'Notion API unavailable'}</small>`;
   document.body.appendChild(notice);
 }
 
