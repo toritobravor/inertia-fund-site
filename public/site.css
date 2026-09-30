@@ -77,11 +77,15 @@ main.v2 { position: relative; z-index: 1; }
 .fill.w92 { width: 92%; }
 .fill.w2 { width: 2.2%; }
 
-/* accent colors for typography */
-.accent-word { color: var(--teal); }
-.accent-num { color: var(--teal); }
-.moment .big .accent-num { color: var(--teal); }
+/* accent colors for typography - brighter teal for WCAG AA contrast */
+.accent-word { color: #14C9B3; text-shadow: 0 0 24px rgba(20, 201, 179, 0.4), 0 2px 8px rgba(0, 0, 0, 0.6); }
+.accent-num { color: #14C9B3; text-shadow: 0 0 20px rgba(20, 201, 179, 0.35), 0 2px 6px rgba(0, 0, 0, 0.5); }
+.moment .big .accent-num { color: #14C9B3; text-shadow: 0 0 32px rgba(20, 201, 179, 0.5), 0 3px 12px rgba(0, 0, 0, 0.7); }
 .bars .num-cell { color: var(--bone); }
+
+/* Extra protection for hero headline */
+.hero h1 { text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7), 0 4px 24px rgba(0, 0, 0, 0.5); }
+.hero h1 .accent-word { color: #1BE5CC; text-shadow: 0 0 28px rgba(27, 229, 204, 0.5), 0 2px 10px rgba(0, 0, 0, 0.8), 0 4px 20px rgba(0, 0, 0, 0.6); }
 
 /* record & contact on dark */
 .record-copy { max-width: 40ch; margin-bottom: 48px; }

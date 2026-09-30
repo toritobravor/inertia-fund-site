@@ -217,14 +217,14 @@ function init() {
 
   // ---- camera keyframes along the scroll (u = 0..1 over the whole page): pos, look, exposure ----
   const KEYS = [
-    { u: 0.00, pos: [ 8.5,  2.4, 10.5], look: [-1.2, -0.5, 0], exp: 0.9 },   // Hero
+    { u: 0.00, pos: [ 9.5,  3.2, 11.5], look: [-2.0, -0.8, 0], exp: 0.88 },  // Hero (turbine lower/left of headline)
     { u: 0.10, pos: [ 4.0,  1.2,  6.2], look: [-2.6, -0.4, 0], exp: 0.9 },   // Constraint
     { u: 0.20, pos: [-0.5,  0.8,  5.5], look: [ 0.0,  0.0, 0], exp: 0.24 },  // Moment A (dark)
     { u: 0.30, pos: [ 2.8,  1.5,  7.0], look: [ 1.0, -0.2, 0], exp: 0.9 },   // Rule
     { u: 0.40, pos: [ 5.5,  2.2,  9.0], look: [ 3.5,  0.1, 0], exp: 0.22 },  // Moment B (dark)
-    { u: 0.50, pos: [28.0,  5.5, 20.0], look: [12.0,  1.5, 0], exp: 0.18 },  // Three Groups (dimmed, high angle to stay out of way)
+    { u: 0.50, pos: [28.0,  5.5, 20.0], look: [12.0,  1.5, 0], exp: 0.18 },  // Three Groups (dimmed, high angle)
     { u: 0.60, pos: [24.0,  4.5, 17.0], look: [19.0,  2.0, 0], exp: 0.35 },  // Value Chain (show progression markers)
-    { u: 0.75, pos: [30.5,  5.5, 19.5], look: [26.0,  1.8, 0], exp: 0.28 },  // Record (dimmed for readability)
+    { u: 0.75, pos: [30.5,  5.5, 19.5], look: [26.0,  1.8, 0], exp: 0.28 },  // Record (dimmed)
     { u: 0.88, pos: [33.0,  6.0, 21.0], look: [28.0,  0.5, 0], exp: 0.22 },  // Evidence (dimmed)
     { u: 1.00, pos: [35.5,  6.5, 22.5], look: [29.0, -0.2, 0], exp: 0.18 }   // Contact (very dim)
   ];
