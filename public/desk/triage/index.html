@@ -4,16 +4,30 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>Early-Stage Triage — Inertia Fund Desk</title>
+<title>Early Inertia Triage — Inertia Fund Desk</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/desk/triage/style.css">
+<style>
+.mast .legend{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:5px;max-width:64ch;font-size:12.5px;color:var(--ink3)}
+.mast .legend li{display:flex;gap:10px;align-items:baseline}
+.mast .legend .pill{flex:0 0 auto;min-width:76px;text-align:center}
+.mast .legend .pill.REF{color:var(--ink2);border-style:dashed}
+</style>
 </head>
 <body>
 <div class="deskbar"><a href="https://inertia.fund">← Desk</a><span>Inertia Fund · internal · scores are judgments</span><a href="/cdn-cgi/access/logout">Sign out</a></div>
 <header class="mast">
   <div>
     <div class="eyebrow">Inertia Fund · Early Stage &amp; Disruptors · Scorecard v2</div>
-    <h1>Early-Stage Triage</h1>
+    <h1>Early Inertia Triage</h1>
+    <div class="sub">Early Inertia asks one question of every power company: can a first commercial unit be built on a date we can check? Each company must first pass a gate, showing that it attacks a dated power-sector constraint, and then a check against known failure patterns. It is then scored on six weighted axes: Physics, Path to a first unit, Buyer, Team, Progress and Capital. The composite sets the action: STOP, WATCH, DIVE or SITE. Companies whose money already funds plants or scale-up are referred to Accelerated Inertia.</div>
+    <ul class="legend" aria-label="What each action means">
+      <li><span class="pill STOP">STOP</span><span>Not a fit now: it fails the gate or a known failure pattern, or it scores too low.</span></li>
+      <li><span class="pill WATCH">WATCH</span><span>Credible, but we wait for a dated milestone before we look deeper.</span></li>
+      <li><span class="pill DIVE">DIVE</span><span>Strong enough for a deeper diligence look.</span></li>
+      <li><span class="pill SITE">SITE</span><span>Top tier: needs a site visit, a second independent score and a human read.</span></li>
+      <li><span class="pill REF">REFERRED</span><span>Referred to Accelerated Inertia: already selling and scaling, so it belongs there.</span></li>
+    </ul>
     <div class="sub">Every name the Scout has ticketed, graded under Scorecard v2 on 7 September 2026. Scores are Inertia Fund judgments produced by an AI grader from the ticket. The last field on every card, Human intuition, is yours.</div>
   </div>
   <div><div class="counts" id="counts"></div><div id="who"></div></div>
@@ -62,6 +76,7 @@
 window.__GRADES__ = [];
 </script>
 <script src="/desk/triage/grades.js" onerror="console.warn('Static grades.js not loaded, will use API only')"></script>
+<script src="/desk/triage/grades-2026-09-30.js"></script>
 <script src="/desk/triage/app.js"></script>
 </body>
 </html>
