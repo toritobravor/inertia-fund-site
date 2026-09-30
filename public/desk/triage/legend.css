@@ -3,7 +3,13 @@
 .deskbar{display:flex;justify-content:space-between;align-items:center;gap:18px;padding:7px 28px;border-bottom:1px solid var(--hair);font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
 .deskbar a{color:var(--ink2);text-decoration:none}
 .deskbar a:hover{color:var(--ink)}
-.mast .legend{list-style:none;margin:12px 0 0;padding:0;display:grid;grid-template-columns:max-content 1fr;gap:6px 12px;align-items:baseline;max-width:64ch;font-size:12.5px;line-height:1.45;color:var(--ink3)}
-.mast .legend li{display:contents}
-.mast .legend .pill{justify-self:start;min-width:9ch;text-align:center;font-size:10px;padding:3px 6px}
+
+/* Header text spans the full content width; the stats row wraps onto its own line below it. */
+.mast > div:first-child{flex:1 1 100%;min-width:0}
+.mast .sub{max-width:none}
+
+/* Legend: as many columns as fit (two or three on desktop, one on mobile), no bullets. */
+.mast .legend{list-style:none;margin:12px 0 4px;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:8px 28px;font-size:12.5px;line-height:1.45;color:var(--ink3)}
+.mast .legend li{display:flex;gap:10px;align-items:baseline}
+.mast .legend .pill{flex:0 0 auto;min-width:9ch;text-align:center;font-size:10px;padding:3px 6px}
 .pill.REF{color:var(--ink2);border-style:dashed}

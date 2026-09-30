@@ -6,6 +6,7 @@ const MODE = window.__DESK_MODE__ || "artifact";   // "site" (login, per-user AP
 let DATA = null;
 let fallbackToStatic = false;
 let apiErrorMessage = null;
+let quietFallback = false;
 
 try {
   const res = await fetch("/desk/api/grades", { credentials: "same-origin", cache: "no-store" });
@@ -16,6 +17,8 @@ try {
   } else {
     const errBody = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
     apiErrorMessage = errBody.error || `HTTP ${res.status}`;
+    // No token configured is the normal static-fallback mode, not a failure: no toast.
+    quietFallback = res.status === 503 || /NOTION_TOKEN not configured/i.test(apiErrorMessage);
     console.warn("API error:", apiErrorMessage);
     fallbackToStatic = true;
   }
@@ -314,7 +317,7 @@ current = (DATA.slice().sort((a,b)=>ORDER[a.action]-ORDER[b.action]||(b.composit
 renderAll();
 
 // Show a small notice if we fell back to static grades
-if (fallbackToStatic && DATA.length > 0) {
+if (fallbackToStatic && !quietFallback && DATA.length > 0) {
   const notice = document.createElement('div');
   notice.style.cssText = 'position:fixed;bottom:1rem;right:1rem;background:var(--warn,#fef3cd);color:var(--ink,#000);padding:0.75rem 1.25rem;border-radius:6px;font-size:0.875rem;box-shadow:0 2px 8px rgba(0,0,0,0.1);z-index:1000;max-width:300px;';
   notice.innerHTML = `<strong>Showing cached ranking</strong><br><small>${apiErrorMessage || 'Notion API unavailable'}</small>`;
