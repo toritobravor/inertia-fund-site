@@ -84,83 +84,96 @@ function prop(page, name) {
 }
 
 // Map a Notion page to the card shape expected by the triage UI.
+// Property names follow the Early Stage Grades schema (collection d366d623-7abb-4f1c-86a6-f43c52c2a2db).
+// Grades has no People, Financing, Viability, Website or per-axis evidence columns: those card fields are
+// left empty, except per-axis evidence, which is split out of the single Evidence text when it is labelled.
+
+const AXES = [
+  ["P", "Physics retired", 22],
+  ["D", "Path to first unit", 20],
+  ["B", "Buyer & license", 18],
+  ["T", "Team that has built", 15],
+  ["R", "Rate of progress", 15],
+  ["K", "Capital position", 10],
+];
+const EVIDENCE_LABELS = {
+  P: /physics retired/i, D: /path to first unit/i, B: /buyer (?:and|&) licen[cs]e/i,
+  T: /team that has built/i, R: /rate of progress/i, K: /capital position/i,
+};
+const ACTIONS = new Set(["STOP", "WATCH", "DIVE", "SITE"]);
+
+const isTrue = (v, words) => v === true || (typeof v === "string" && words.test(v.trim()));
+const passes = (v) => isTrue(v, /^(yes|pass|passed|true)$/i);
+const graveyardHit = (v) => isTrue(v, /^(yes|hit|true)$/i);
+
+// Ticket URL points at the Scout ticket page; its 32-hex id is the id the static cards and the stored
+// human reads use. Fall back to the Grades page id when the Ticket URL is an external link.
+function cardId(page, ticketURL) {
+  const m = /([0-9a-f]{32})(?:[?#].*)?$/i.exec(String(ticketURL || "").replace(/-/g, ""));
+  if (m && /notion\.(so|com)/i.test(ticketURL)) return m[1].toLowerCase();
+  return page.id.replace(/-/g, "");
+}
+
+// Composite: the 'Composite v2' formula when it has a value; else a number at the start of the Evidence
+// text ("Composite 64.4: ..." or "64.4 ..."); else 20 x weighted mean of the six axes = sum(w*s)/5.
+// Returns null when neither exists and an axis is missing, rather than inventing a low score.
+export function compositeFor(formulaValue, evidenceText, scores) {
+  if (typeof formulaValue === "number" && Number.isFinite(formulaValue)) return round1(formulaValue);
+  if (typeof formulaValue === "string" && formulaValue.trim() !== "" && Number.isFinite(+formulaValue)) return round1(+formulaValue);
+  const m = /^\s*(?:composite(?:\s*v2)?\s*[:=]?\s*)?(\d{1,3}(?:\.\d+)?)(?=\s|:|\/|$)/i.exec(evidenceText || "");
+  if (m && +m[1] <= 100 && /^\s*composite/i.test(evidenceText)) return round1(+m[1]);
+  if (!scores || AXES.some(([k]) => typeof scores[k] !== "number")) return null;
+  return round1(AXES.reduce((sum, [k, , w]) => sum + w * scores[k], 0) / 5);
+}
+const round1 = (n) => Math.round(n * 10) / 10;
+
+function splitEvidence(text) {
+  const out = { P: "", D: "", B: "", T: "", R: "", K: "" };
+  if (!text) return out;
+  const hits = [];
+  for (const [k, re] of Object.entries(EVIDENCE_LABELS)) {
+    const m = new RegExp(re.source + "\\s*\\d?\\s*:?", "i").exec(text);
+    if (m) hits.push({ k, at: m.index, body: m.index + m[0].length });
+  }
+  hits.sort((a, b) => a.at - b.at);
+  hits.forEach((h, i) => { out[h.k] = text.slice(h.body, i + 1 < hits.length ? hits[i + 1].at : undefined).trim().replace(/[.;]\s*$/, "."); });
+  return out;
+}
+
 export function mapNotionPageToCard(page) {
-  // Required fields
   const name = prop(page, "Name");
-  if (!name) return null; // skip rows with no name
+  if (!name) return null;
 
-  const sector = prop(page, "Sector") || "";
-  const stage = prop(page, "Stage") || "";
-  const composite = prop(page, "Composite v2");
-  const action = prop(page, "Card action") || "STOP";
-
-  // Gate fields (4 boolean questions)
-  const filterPass = prop(page, "Filter pass");
-  const gate = filterPass ? [true, true, true, true] : [false, false, false, false];
-
-  // Graveyard
-  const graveyard = prop(page, "Graveyard");
-  const grave = graveyard ? (graveyard === "Hit" || graveyard === "hit") : false;
-
-  // Six axis scores
-  const scores = {
-    P: prop(page, "Physics retired") || 0,
-    D: prop(page, "Path to first unit") || 0,
-    B: prop(page, "Buyer & license") || 0,
-    T: prop(page, "Team that has built") || 0,
-    R: prop(page, "Rate of progress") || 0,
-    K: prop(page, "Capital position") || 0
-  };
-
-  // Count how many axes are at 4 or higher
-  const fours = Object.values(scores).filter(v => v >= 4).length;
-
-  // Hard floor: Physics or Path below 2
-  const floor = scores.P < 2 || scores.D < 2;
-
-  // Evidence fields (text for each axis)
-  // Try multiple possible property names for evidence fields
-  const evidence = {
-    P: prop(page, "Physics retired evidence") || prop(page, "P evidence") || prop(page, "Physics evidence") || "",
-    D: prop(page, "Path evidence") || prop(page, "D evidence") || prop(page, "Path to first unit evidence") || "",
-    B: prop(page, "Buyer evidence") || prop(page, "B evidence") || prop(page, "Buyer & license evidence") || "",
-    T: prop(page, "Team evidence") || prop(page, "T evidence") || prop(page, "Team that has built evidence") || "",
-    R: prop(page, "Rate evidence") || prop(page, "R evidence") || prop(page, "Rate of progress evidence") || "",
-    K: prop(page, "Capital evidence") || prop(page, "K evidence") || prop(page, "Capital position evidence") || ""
-  };
-
-  // Determine status
-  let status = "scored";
-  if (!filterPass) status = "unscored";
-  else if (grave) status = "graveyard";
-
-  // Reason code
-  const reasonCode = prop(page, "Reason code") || "";
-
-  // Other fields
-  const crowding = prop(page, "Crowding") || "";
-  const originReview = prop(page, "Origin review") || "";
-  const finalAction = prop(page, "Final action") || action;
-
-  // Text fields
-  const humanIntuition = prop(page, "Human intuition") || "";
-  const evidenceText = prop(page, "Evidence") || "";
-  const wmbt = prop(page, "What must be true") || "";
-  const scorer = prop(page, "Scorer") || "";
-  const outcomeNote = prop(page, "Outcome note") || "";
-
-  // Dates
-  const gradeDate = prop(page, "Grade date") || new Date().toISOString().slice(0, 10);
-
-  // URL
   const ticketURL = prop(page, "Ticket URL") || "";
+  const stage = prop(page, "Stage") || "";
+  const evidenceText = prop(page, "Evidence") || "";
 
-  // Build the card object matching the expected shape
+  const raw = Object.fromEntries(AXES.map(([k, label]) => [k, prop(page, label)]));
+  const haveAny = Object.values(raw).some((v) => typeof v === "number");
+  const scores = haveAny ? raw : null;
+  const fours = scores ? Object.values(scores).filter((v) => v >= 4).length : 0;
+  const floor = scores ? (typeof scores.P === "number" && scores.P < 2) || (typeof scores.D === "number" && scores.D < 2) : false;
+
+  // Filter pass and Graveyard are selects (YES/NO) in Grades; accept checkboxes and "Hit"/"Pass" too.
+  const filterPass = passes(prop(page, "Filter pass"));
+  const grave = graveyardHit(prop(page, "Graveyard"));
+
+  // Same precedence as the static cards: graveyard, then a failed filter, then no scores at all.
+  let status = "scored";
+  if (grave) status = "graveyard";
+  else if (!filterPass) status = "filter";
+  else if (!scores) status = "unscored";
+
+  const cardAction = prop(page, "Card action");
+  const action = ACTIONS.has(cardAction) ? cardAction : "STOP";
+  const gradeDate = prop(page, "Grade date") || "";
+
   return {
-    id: page.id.replace(/-/g, ""),
+    id: cardId(page, ticketURL),
+    grades_page_id: page.id.replace(/-/g, ""),
     name,
-    country: prop(page, "Country") || "Unknown",
-    sector,
+    country: prop(page, "Country") || "",
+    sector: prop(page, "Sector") || "",
     stage,
     stage_used: stage,
     pursue: prop(page, "What they sell") || "",
@@ -169,21 +182,25 @@ export function mapNotionPageToCard(page) {
     viability: prop(page, "Viability note") || "",
     source: ticketURL,
     status,
-    gate,
+    gate: filterPass ? [true, true, true, true] : [false, true, true, true],
     gate_note: prop(page, "Gate note") || "",
     grave,
     grave_note: prop(page, "Graveyard note") || "",
-    crowding,
-    origin: originReview,
+    crowding: prop(page, "Crowding") || "",
+    origin: prop(page, "Origin review") || "",
     scores,
-    evidence,
-    composite,
+    evidence: splitEvidence(evidenceText),
+    evidence_text: evidenceText,
+    composite: compositeFor(prop(page, "Composite v2"), evidenceText, scores),
     fours,
     floor,
     action,
-    reason: reasonCode,
-    analysis: prop(page, "Analysis") || "",
-    wmbt,
+    final_action: prop(page, "Final action") || "",
+    reason: prop(page, "Reason code") || "",
+    analysis: prop(page, "Analysis") || evidenceText,
+    wmbt: prop(page, "What must be true") || "",
+    scorer: prop(page, "Scorer") || "",
+    scorecard: prop(page, "Scorecard version") || "",
     links: {
       website: prop(page, "Website") || null,
       linkedin_company: prop(page, "LinkedIn company") || null,
@@ -191,9 +208,9 @@ export function mapNotionPageToCard(page) {
       x: [],
       other: [],
       note: "",
-      checked: gradeDate
+      checked: gradeDate,
     },
-    graded: gradeDate
+    graded: gradeDate,
   };
 }
 
