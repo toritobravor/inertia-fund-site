@@ -1,0 +1,9 @@
+/* Desk bar, action legend and REFERRED pill (30 Sep 2026).
+   A separate file, not an inline <style>: the Worker serves the triage host with CSP style-src 'self', which blocks inline styles. */
+.deskbar{display:flex;justify-content:space-between;align-items:center;gap:18px;padding:7px 28px;border-bottom:1px solid var(--hair);font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
+.deskbar a{color:var(--ink2);text-decoration:none}
+.deskbar a:hover{color:var(--ink)}
+.mast .legend{list-style:none;margin:12px 0 0;padding:0;display:grid;grid-template-columns:max-content 1fr;gap:6px 12px;align-items:baseline;max-width:64ch;font-size:12.5px;line-height:1.45;color:var(--ink3)}
+.mast .legend li{display:contents}
+.mast .legend .pill{justify-self:start;min-width:9ch;text-align:center;font-size:10px;padding:3px 6px}
+.pill.REF{color:var(--ink2);border-style:dashed}
