@@ -243,7 +243,9 @@ main.v2 { position: relative; z-index: 1; }
                   margin: 0 clamp(16px, 3vw, 32px); max-width: 180px; }
 
 /* ---- Value Chain Matrix ---- */
-.chain-matrix { margin-top: clamp(40px, 6vh, 64px); overflow-x: auto; }
+.chain-matrix { margin-top: clamp(40px, 6vh, 64px); overflow-x: auto; 
+                background: rgba(21,25,29,.78); padding: clamp(24px, 3vw, 36px); border-radius: 6px;
+                backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
 .matrix-header, .matrix-row { display: grid; grid-template-columns: 180px repeat(6, 1fr); gap: 0; }
 .matrix-corner { border-right: 1px solid rgba(255,255,255,.12); }
 .matrix-col-label { padding: 16px 12px; text-align: center; border-right: 1px solid rgba(255,255,255,.12); border-bottom: 1px solid rgba(255,255,255,.12); }
@@ -263,7 +265,9 @@ main.v2 { position: relative; z-index: 1; }
 .matrix-cell[data-color="teal"]::before { background: var(--teal); }
 .matrix-cell[data-color="ochre"]::before { background: var(--ochre); }
 
-.chain-caption { font-size: 15px; line-height: 1.55; color: var(--ink-3); margin-top: clamp(32px, 5vh, 48px); max-width: 68ch; }
+.chain-caption { font-size: 15px; line-height: 1.55; color: var(--ink-3); margin-top: clamp(32px, 5vh, 48px); max-width: 68ch;
+                 background: rgba(21,25,29,.78); padding: clamp(20px, 2.5vw, 28px); border-radius: 6px;
+                 backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
 
 .partner-bio-note { font-size: 15px; color: var(--ink-3); margin-top: 32px; font-style: italic; }
 
