@@ -305,6 +305,7 @@ async function handleGrades(request, env, url) {
   let fromCache = false;
 
   // Try KV cache first unless force refresh
+  // NOTE: Cache stores Notion-sourced data only; we merge static profile data on every serve
   if (!forceRefresh && env.DESK_KV) {
     try {
       const cached = await env.DESK_KV.get(GRADES_CACHE_KEY, "json");
@@ -327,7 +328,7 @@ async function handleGrades(request, env, url) {
       grades = transformNotionPages(pages);
       console.log(`Fetched ${grades.length} grades from Notion (${pages.length} pages queried)`);
 
-      // Cache in KV
+      // Cache in KV (before merge, to keep cache size small)
       if (env.DESK_KV) {
         try {
           await env.DESK_KV.put(GRADES_CACHE_KEY, JSON.stringify({ data: grades, at: Date.now() }), {
@@ -349,6 +350,9 @@ async function handleGrades(request, env, url) {
     }
   }
 
+  // Always merge profile data from static grades.js (whether from cache or fresh from Notion)
+  grades = await mergeStaticProfileData(env, grades);
+
   const res = json({ 
     grades, 
     count: grades.length,
@@ -357,6 +361,61 @@ async function handleGrades(request, env, url) {
   });
   res.headers.set("Cache-Control", `private, max-age=${GRADES_CACHE_TTL_SEC}`);
   return res;
+}
+
+// Merge profile data from static grades.js into Notion-sourced grades.
+// Notion has scores/actions/grades, but lacks People, Financing, Viability, and full links.
+async function mergeStaticProfileData(env, notionGrades) {
+  try {
+    // Fetch the static grades.js file from the ASSETS bundle
+    const gradesUrl = new URL("/desk/triage/grades.js", "https://placeholder.local");
+    const res = await env.ASSETS.fetch(new Request(gradesUrl));
+    if (!res.ok) {
+      console.warn("Could not fetch static grades.js for profile merge");
+      return notionGrades;
+    }
+    
+    const gradesText = await res.text();
+    // Extract the __GRADES__ array. The file contains: window.__GRADES__=[{...},...]
+    const match = /window\.__GRADES__\s*=\s*(\[[\s\S]*\]);?\s*$/.exec(gradesText);
+    if (!match) {
+      console.warn("Could not parse static grades.js");
+      return notionGrades;
+    }
+    
+    const staticGrades = JSON.parse(match[1]);
+    const staticById = Object.fromEntries(staticGrades.map(g => [g.id, g]));
+    
+    // Merge profile fields into Notion grades by id
+    const merged = notionGrades.map(card => {
+      const staticCard = staticById[card.id];
+      if (!staticCard) return card;
+      
+      return {
+        ...card,
+        // Merge profile fields that Notion doesn't have
+        people: card.people || staticCard.people || "",
+        financing: card.financing || staticCard.financing || "",
+        viability: card.viability || staticCard.viability || "",
+        // Merge the full links object, keeping Notion's website/linkedin_company if present
+        links: {
+          website: card.links?.website || staticCard.links?.website || null,
+          linkedin_company: card.links?.linkedin_company || staticCard.links?.linkedin_company || null,
+          linkedin_people: staticCard.links?.linkedin_people || [],
+          x: staticCard.links?.x || [],
+          other: staticCard.links?.other || [],
+          note: staticCard.links?.note || "",
+          checked: card.links?.checked || staticCard.links?.checked || "",
+        }
+      };
+    });
+    
+    console.log(`Merged profile data from static grades for ${merged.length} cards`);
+    return merged;
+  } catch (err) {
+    console.error("Failed to merge static profile data:", err.message);
+    return notionGrades;
+  }
 }
 
 // ---------- helpers
