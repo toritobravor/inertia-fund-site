@@ -144,18 +144,23 @@ function init() {
   coupling.position.set(5.45, 0, 0); scene.add(coupling);
 
   // ---- camera keyframes along the scroll (u = 0..1 over the whole page): pos, look, exposure ----
+  // Sections 00-03 (u 0.00-0.40): zoom in through the turbine
+  // Sections 04-07 (u 0.50-0.80): REVERSE the journey, zoom back out through the same path
+  // Section 08/contact (u 0.90-1.00): fade scene to black
   const KEYS = [
     { u: 0.00, pos: [ 9.5,  3.2, 11.5], look: [-2.0, -0.8, 0], exp: 0.88 },  // Hero
-    { u: 0.10, pos: [ 4.0,  1.2,  6.2], look: [-2.6, -0.4, 0], exp: 0.9 },   // Constraint
+    { u: 0.10, pos: [ 4.0,  1.2,  6.2], look: [-2.6, -0.4, 0], exp: 0.9 },   // Section 01: Constraint
     { u: 0.20, pos: [-0.5,  0.8,  5.5], look: [ 0.0,  0.0, 0], exp: 0.24 },  // Moment A (dark)
-    { u: 0.30, pos: [ 2.8,  1.5,  7.0], look: [ 1.0, -0.2, 0], exp: 0.9 },   // Rule
-    { u: 0.40, pos: [ 5.5,  2.2,  9.0], look: [ 3.5,  0.1, 0], exp: 0.22 },  // Moment B (dark)
-    { u: 0.50, pos: [18.0,  6.0, 18.0], look: [19.0,  3.0, 0], exp: 0.12 },  // Progression Centerpiece (VERY DIM, high angle)
-    { u: 0.60, pos: [28.0,  5.5, 20.0], look: [12.0,  1.5, 0], exp: 0.18 },  // Three Groups (dimmed, high angle)
-    { u: 0.70, pos: [24.0,  4.5, 17.0], look: [19.0,  2.0, 0], exp: 0.35 },  // Value Chain
-    { u: 0.80, pos: [30.5,  5.5, 19.5], look: [26.0,  1.8, 0], exp: 0.28 },  // Record
-    { u: 0.90, pos: [33.0,  6.0, 21.0], look: [28.0,  0.5, 0], exp: 0.22 },  // Evidence
-    { u: 1.00, pos: [35.5,  6.5, 22.5], look: [29.0, -0.2, 0], exp: 0.18 }   // Contact
+    { u: 0.30, pos: [ 2.8,  1.5,  7.0], look: [ 1.0, -0.2, 0], exp: 0.9 },   // Section 02: Rule
+    { u: 0.40, pos: [ 5.5,  2.2,  9.0], look: [ 3.5,  0.1, 0], exp: 0.22 },  // Moment B (dark, deepest point)
+    // REVERSE JOURNEY STARTS HERE: mirror the path back out
+    { u: 0.50, pos: [ 2.8,  1.5,  7.0], look: [ 1.0, -0.2, 0], exp: 0.9 },   // Centerpiece (reverse of 02)
+    { u: 0.60, pos: [-0.5,  0.8,  5.5], look: [ 0.0,  0.0, 0], exp: 0.24 },  // Section 03: Three Groups (reverse of Moment A)
+    { u: 0.70, pos: [ 4.0,  1.2,  6.2], look: [-2.6, -0.4, 0], exp: 0.9 },   // Section 04: Value Chain (reverse of 01)
+    { u: 0.80, pos: [ 9.5,  3.2, 11.5], look: [-2.0, -0.8, 0], exp: 0.88 },  // Sections 05-07: Handoff/Access/Record (reverse of hero)
+    // FADE TO BLACK
+    { u: 0.90, pos: [ 9.5,  3.2, 11.5], look: [-2.0, -0.8, 0], exp: 0.10 },  // Section 08: Evidence (fading)
+    { u: 1.00, pos: [ 9.5,  3.2, 11.5], look: [-2.0, -0.8, 0], exp: 0.0 }    // Contact (fully black)
   ];
   const tmpPos = new THREE.Vector3(), tmpLook = new THREE.Vector3();
   const smooth = t => t < 0 ? 0 : t > 1 ? 1 : t * t * (3 - 2 * t);
