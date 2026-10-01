@@ -102,7 +102,11 @@ main.v2 { position: relative; z-index: 1; }
 .legal a { color: var(--ink-4); }
 
 /* ---- narrower screens ---- */
-@media (max-width: 900px) { .dark-list { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 900px) { 
+  .dark-list { grid-template-columns: repeat(2, 1fr); }
+  .progression-visual { gap: clamp(16px, 4vw, 32px); }
+  .stage-column { padding: 16px; }
+}
 @media (max-width: 800px) {
   .bar nav { display: none; }
   /* the rotor sits in the upper half of the phone screen; the copy reads against the darkened lower half */
@@ -141,7 +145,7 @@ main.v2 { position: relative; z-index: 1; }
                    max-width: 50ch; margin-left: auto; margin-right: auto; }
 
 .progression-visual { display: flex; align-items: center; justify-content: center; gap: clamp(24px, 5vw, 64px); 
-                      max-width: 1400px; margin: 0 auto clamp(48px, 8vh, 80px); flex-wrap: wrap; }
+                      max-width: 1400px; margin: 0 auto clamp(48px, 8vh, 80px); flex-wrap: nowrap; }
 
 .stage-column { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 16px; 
                 padding: clamp(24px, 3vw, 40px); transition: transform .4s ease; }
