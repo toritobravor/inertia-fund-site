@@ -50,7 +50,7 @@ Tools on the desk:
    - Add a **secret** named `DESK_ROLES`. Its value is a JSON object with one entry per person — the key is their verified email (lowercase), and each entry has a display name and a role:
 
    ```json
-   {"jorge@example.com":{"name":"Jorge Camara","role":"partner"},
+   {"partner@example.com":{"name":"Managing Partner","role":"partner"},
     "expert1@example.com":{"name":"Expert Name","role":"expert"}}
    ```
 
