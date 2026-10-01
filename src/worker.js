@@ -21,7 +21,7 @@
 import { queryGrades, transformNotionPages } from "./notion-grades.js";
 
 const TRIAGE_HOST = "triage.inertia.fund";
-const PUBLIC_HOSTS = new Set(["inertia.fund", "www.inertia.fund", "localhost", "127.0.0.1"]);
+const PUBLIC_HOSTS = new Set(["inertia.fund", "www.inertia.fund"]);
 
 // Paths the triage host is allowed to serve from the assets bundle. Everything else is 404,
 // so the public marketing pages are not reachable from the private hostname.
