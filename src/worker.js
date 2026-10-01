@@ -13,7 +13,7 @@
 // Variables and secrets (Cloudflare dashboard → Workers → inertia-fund-site → Settings):
 //   CF_ACCESS_TEAM_DOMAIN  plain var, e.g. https://inertiafund.cloudflareaccess.com
 //   CF_ACCESS_AUD          plain var, the Application Audience tag of the Access application
-//   DESK_ROLES             secret, JSON: { "jorge@example.com": { "name": "Jorge Camara", "role": "partner" }, ... }
+//   DESK_ROLES             secret, JSON: { "partner@example.com": { "name": "Managing Partner", "role": "partner" }, ... }
 //                          role is "partner" (their read governs the card) or "expert" (advisory)
 //   NOTION_TOKEN           secret, the Notion integration token for reading Early Stage Grades
 //   REFRESH_KEY            secret, the key to force-refresh the Notion grades cache
@@ -219,6 +219,15 @@ function loadRoles(env) {
   }
 }
 
+function getDisplayName(who) {
+  // Map partner role to "Investment Committee" for user-visible output
+  // to protect partner privacy. Expert names are shown as-is.
+  if (who.role === "partner") {
+    return "Investment Committee";
+  }
+  return who.name;
+}
+
 // ---------- reads API (human intuition, shared across the partnership)
 // Keys are read:<companyId>:<email>. Reads written under the old password logins remain
 // readable under their old usernames; nothing is deleted or rewritten.
@@ -248,6 +257,10 @@ async function handleApi(request, env, url, who) {
         const cid = k.name.slice(5, idx);
         const user = k.name.slice(idx + 1);
         if (!user) continue; // ignore legacy single-user keys
+        // Filter the 'by' field to show role labels instead of real names
+        if (v.role === "partner" && v.by) {
+          v.by = "Investment Committee";
+        }
         (out[cid] = out[cid] || {})[user] = v;
       }
       cursor = page.list_complete ? undefined : page.cursor;
@@ -266,7 +279,7 @@ async function handleApi(request, env, url, who) {
     // Identity comes from the verified Access token, never from the body. A reader cannot
     // file a read as someone else, and cannot overwrite or withdraw anyone else's.
     const doc = {
-      score: body.score, by: who.name, user: who.user, role: who.role,
+      score: body.score, by: getDisplayName(who), user: who.user, role: who.role,
       see: String(body.see).slice(0, 4000), wrong: String(body.wrong).slice(0, 4000),
       date: String(body.date || new Date().toISOString().slice(0, 10)), savedAt: new Date().toISOString(),
       companyId: id, company: String(body.company || "").slice(0, 120),
@@ -353,6 +366,9 @@ async function handleGrades(request, env, url) {
   // Always merge profile data from static grades.js (whether from cache or fresh from Notion)
   grades = await mergeStaticProfileData(env, grades);
 
+  // Sanitize any partner names from grades data
+  grades = sanitizeGradesData(grades);
+
   const res = json({ 
     grades, 
     count: grades.length,
@@ -361,6 +377,26 @@ async function handleGrades(request, env, url) {
   });
   res.headers.set("Cache-Control", `private, max-age=${GRADES_CACHE_TTL_SEC}`);
   return res;
+}
+
+// Remove partner names from grades data to protect privacy.
+// Fields like 'scorer', 'approved_by', 'published_by' etc. from Notion
+// should show role labels instead of real names.
+function sanitizeGradesData(grades) {
+  return grades.map(grade => {
+    const sanitized = { ...grade };
+    // Replace any scorer/approver name fields with role label
+    if (sanitized.scorer) {
+      sanitized.scorer = "Investment Committee";
+    }
+    if (sanitized.approved_by) {
+      sanitized.approved_by = "Investment Committee";
+    }
+    if (sanitized.published_by) {
+      sanitized.published_by = "Investment Committee";
+    }
+    return sanitized;
+  });
 }
 
 // Merge profile data from static grades.js into Notion-sourced grades.

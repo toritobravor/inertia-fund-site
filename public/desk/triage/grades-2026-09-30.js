@@ -1,4 +1,4 @@
-// Early Inertia: 47 Jorge-approved grades (30 Sep 2026), Scorecard v2.1.
+// Early Inertia: 47 Investment Committee-approved grades (30 Sep 2026), Scorecard v2.1.
 // Applied on top of grades.js: each entry below is merged by id into the matching card (same card format),
 // and the six companies referred to Accelerated Inertia are removed from the ranking.
 (function(){
