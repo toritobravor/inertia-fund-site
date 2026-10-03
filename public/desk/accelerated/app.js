@@ -32,12 +32,42 @@
     if (!text) return [];
     const lines = String(text).split('\n').filter(l => l.trim());
     return lines.map(line => {
-      const match = line.match(/^(.+?)\s*—\s*(.+?)\s*—\s*(https?:\/\/.+)$/);
+      // Format: name – title – LinkedIn URL or 'not found'
+      const match = line.match(/^(.+?)\s*[–—-]\s*(.+?)\s*[–—-]\s*(.+)$/);
       if (match) {
-        return { name: match[1].trim(), title: match[2].trim(), url: match[3].trim() };
+        const name = match[1].trim();
+        const title = match[2].trim();
+        const urlPart = match[3].trim();
+        const url = urlPart.match(/^https?:\/\//) ? urlPart : '';
+        return { name, title, url, notFound: !url };
       }
-      return { name: line.trim(), title: '', url: '' };
+      return { name: line.trim(), title: '', url: '', notFound: false };
     });
+  }
+
+  function parseFundingRounds(text) {
+    if (!text) return [];
+    const lines = String(text).split('\n').filter(l => l.trim());
+    return lines.map(line => {
+      // Format: date | round | amount | leads | source URL
+      const parts = line.split('|').map(p => p.trim());
+      if (parts.length >= 3) {
+        return {
+          date: parts[0] || '',
+          round: parts[1] || '',
+          amount: parts[2] || '',
+          leads: parts[3] || '',
+          url: parts[4] || ''
+        };
+      }
+      return { date: '', round: '', amount: '', leads: '', url: '', raw: line };
+    });
+  }
+
+  function formatCapital(amount) {
+    if (amount == null || amount === '') return 'not verified';
+    if (typeof amount === 'number') return `$${amount}M`;
+    return String(amount);
   }
 
   // ---------- data loading
@@ -201,12 +231,15 @@
       if (p.url) {
         links.push(`<div class="lk"><b>LinkedIn</b><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.name)}${p.title?` · ${esc(p.title)}`:''}</a></div>`);
       } else if (p.name) {
-        links.push(`<div class="lk"><b>Key person</b>${esc(p.name)}${p.title?` · ${esc(p.title)}`:''}</div>`);
+        const notFoundNote = p.notFound ? ' <span style="color:var(--ink3);font-size:11px">(not found)</span>' : '';
+        links.push(`<div class="lk"><b>Key person</b>${esc(p.name)}${p.title?` · ${esc(p.title)}`:''}${notFoundNote}</div>`);
       }
     });
     
-    if (d.capitalRaisedTotal) links.push(`<div class="lk"><b>Capital raised</b>${esc(d.capitalRaisedTotal)}</div>`);
-    if (d.lastRaise) links.push(`<div class="lk"><b>Last raise</b>${esc(d.lastRaise)}</div>`);
+    if (d.capitalRaisedTotal != null || d.capitalRaisedTotal === 0) {
+      links.push(`<div class="lk"><b>Capital raised</b>${formatCapital(d.capitalRaisedTotal)}</div>`);
+    }
+    
     if (d.otherLinks) {
       const otherUrls = String(d.otherLinks).match(/(https?:\/\/[^\s<>"]+)/g);
       if (otherUrls) {
@@ -215,7 +248,10 @@
     }
     
     if (links.length > 0) {
-      linksHtml = `<section class="blk"><h3>Links</h3><div class="linkbox">${links.join('')}</div></section>`;
+      const presenceNote = d.publicLinksChecked 
+        ? `<div class="note small" style="margin-top:10px">Public presence: ${esc(d.publicLinksChecked)}</div>`
+        : '';
+      linksHtml = `<section class="blk"><h3>Links</h3><div class="linkbox">${links.join('')}</div>${presenceNote}</section>`;
     }
 
     // Build axes with rationale
@@ -293,15 +329,27 @@
         </div>
       </div>
 
+      ${d.whatTheySell?`<section class="blk"><h3>What they sell</h3><div class="ticket"><div style="grid-column:1/-1;font-size:14px;color:var(--ink2)">${autoLink(esc(d.whatTheySell))}</div></div></section>`:''}
+
       ${linksHtml}
 
       ${d.businessCase?`<section class="blk"><h3>Business case</h3><p>${autoLink(esc(d.businessCase))}</p></section>`:''}
 
       ${d.customersProof?`<section class="blk"><h3>Customers & proof</h3><p>${autoLink(esc(d.customersProof))}</p></section>`:''}
 
-      ${d.fundingRounds||d.investors?`<section class="blk"><h3>Funding</h3>
-        ${d.capitalRaisedTotal?`<p><strong>Capital raised total:</strong> ${esc(d.capitalRaisedTotal)}</p>`:''}
-        ${d.fundingRounds?`<p><strong>Funding rounds:</strong> ${esc(d.fundingRounds)}</p>`:''}
+      ${d.fundingRounds||d.investors||d.capitalRaisedTotal!=null?`<section class="blk"><h3>Funding</h3>
+        ${d.capitalRaisedTotal!=null?`<p><strong>Capital raised total:</strong> ${formatCapital(d.capitalRaisedTotal)}</p>`:''}
+        ${d.fundingRounds?(() => {
+          const rounds = parseFundingRounds(d.fundingRounds);
+          if (rounds.length > 0 && rounds[0].date) {
+            return `<table style="margin:12px 0"><tr><th>Date</th><th>Round</th><th>Amount</th><th>Leads</th></tr>` +
+              rounds.map(r => {
+                const sourceLink = r.url ? `<a href="${esc(r.url)}" target="_blank" rel="noopener" style="color:var(--arc);text-decoration:none">→</a>` : '';
+                return `<tr><td>${esc(r.date)}</td><td>${esc(r.round)}</td><td>${esc(r.amount)}</td><td>${esc(r.leads)} ${sourceLink}</td></tr>`;
+              }).join('') + `</table>`;
+          }
+          return `<p><strong>Funding rounds:</strong> ${esc(d.fundingRounds)}</p>`;
+        })():''}
         ${d.investors?`<p><strong>Investors:</strong> ${esc(d.investors)}</p>`:''}
       </section>`:''}
 
