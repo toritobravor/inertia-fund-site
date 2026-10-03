@@ -19,13 +19,18 @@
 //   REFRESH_KEY            secret, the key to force-refresh the Notion grades cache
 
 import { queryGrades, transformNotionPages } from "./notion-grades.js";
+import { queryAcceleratedPipeline, transformAcceleratedPages } from "./notion-accelerated.js";
 
 const TRIAGE_HOST = "triage.inertia.fund";
+const ACCELERATED_HOST = "accelerated.inertia.fund";
 const PUBLIC_HOSTS = new Set(["inertia.fund", "www.inertia.fund"]);
 
 // Paths the triage host is allowed to serve from the assets bundle. Everything else is 404,
 // so the public marketing pages are not reachable from the private hostname.
 const TRIAGE_ASSETS = ["/desk/triage/", "/desk/desk.css", "/styles.css", "/favicon.svg", "/favicon.ico"];
+
+// Paths the accelerated host is allowed to serve
+const ACCELERATED_ASSETS = ["/desk/accelerated/", "/desk/desk.css", "/styles.css", "/favicon.svg", "/favicon.ico"];
 
 const JWKS_TTL_MS = 3600_000; // Access rotates signing keys every six weeks; an hour is ample.
 let jwksCache = { url: "", at: 0, keys: null };
@@ -36,6 +41,7 @@ export default {
     const host = url.hostname.toLowerCase();
 
     if (host === TRIAGE_HOST) return triage(request, env, url);
+    if (host === ACCELERATED_HOST) return accelerated(request, env, url);
     if (PUBLIC_HOSTS.has(host)) return publicSite(request, env, url);
 
     // Any other hostname reaching this Worker — a workers.dev route, a preview URL, a
@@ -103,6 +109,59 @@ async function triage(request, env, url) {
   let assetPath = url.pathname;
   if (assetPath === "/" || assetPath === "/index.html") assetPath = "/desk/triage/index.html";
   if (!TRIAGE_ASSETS.some((p) => (p.endsWith("/") ? assetPath.startsWith(p) : assetPath === p))) {
+    return text("Not found.", 404);
+  }
+
+  const res = await env.ASSETS.fetch(new Request(new URL(assetPath, url.origin), request));
+  const h = new Headers(res.headers);
+  h.set("Cache-Control", "private, no-store");
+  h.set("X-Robots-Tag", "noindex, nofollow");
+  h.set("X-Content-Type-Options", "nosniff");
+  h.set("X-Frame-Options", "DENY");
+  h.set("Referrer-Policy", "no-referrer");
+  if ((h.get("Content-Type") || "").includes("text/html")) {
+    h.set(
+      "Content-Security-Policy",
+      "default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+    );
+  }
+  return new Response(res.body, { status: res.status, headers: h });
+}
+
+// ---------- accelerated host
+
+async function accelerated(request, env, url) {
+  if (!env.CF_ACCESS_TEAM_DOMAIN || !env.CF_ACCESS_AUD) {
+    return text("Access is not configured. Set CF_ACCESS_TEAM_DOMAIN and CF_ACCESS_AUD.", 503);
+  }
+
+  if (url.pathname === "/robots.txt") {
+    return new Response("User-agent: *\nDisallow: /\n", {
+      headers: { "Content-Type": "text/plain; charset=utf-8", "X-Robots-Tag": "noindex, nofollow" },
+    });
+  }
+
+  const diag = {};
+  const claims = await verifyAccessJwt(request, env, diag);
+  if (!claims) {
+    return json({ error: "not authenticated through Cloudflare Access", why: diag.why || "no reason recorded" }, 403);
+  }
+
+  const email = String(claims.email || "").toLowerCase();
+  if (!email) return json({ error: "service tokens are not accepted on this application" }, 403);
+
+  const roles = loadRoles(env);
+  if (!roles) return text("The desk is not configured yet. Set the DESK_ROLES secret.", 503);
+  const rec = roles[email];
+  if (!rec) {
+    return json({ error: `${email} is authenticated but has no role on this desk` }, 403);
+  }
+
+  if (url.pathname.startsWith("/desk/api/")) return handleAcceleratedApi(request, env, url);
+
+  let assetPath = url.pathname;
+  if (assetPath === "/" || assetPath === "/index.html") assetPath = "/desk/accelerated/index.html";
+  if (!ACCELERATED_ASSETS.some((p) => (p.endsWith("/") ? assetPath.startsWith(p) : assetPath === p))) {
     return text("Not found.", 404);
   }
 
@@ -452,6 +511,75 @@ async function mergeStaticProfileData(env, notionGrades) {
     console.error("Failed to merge static profile data:", err.message);
     return notionGrades;
   }
+}
+
+// ---------- accelerated API
+const ACCELERATED_CACHE_KEY = "notion:accelerated";
+const ACCELERATED_CACHE_TTL_SEC = 300;
+
+async function handleAcceleratedApi(request, env, url) {
+  if (url.pathname === "/desk/api/accelerated") {
+    const forceRefresh = url.searchParams.get("refresh") === env.REFRESH_KEY && env.REFRESH_KEY;
+
+    if (!env.NOTION_TOKEN) {
+      console.error("NOTION_TOKEN not configured");
+      return json({ error: "NOTION_TOKEN not configured", fallback: true }, 503);
+    }
+
+    let pipeline = null;
+    let fromCache = false;
+
+    if (!forceRefresh && env.DESK_KV) {
+      try {
+        const cached = await env.DESK_KV.get(ACCELERATED_CACHE_KEY, "json");
+        if (cached && cached.at && Date.now() - cached.at < ACCELERATED_CACHE_TTL_SEC * 1000) {
+          pipeline = cached.data;
+          fromCache = true;
+          console.log(`Serving ${pipeline.length} accelerated pipeline entries from cache (age: ${Math.floor((Date.now() - cached.at) / 1000)}s)`);
+        }
+      } catch (err) {
+        console.error("Failed to read cache:", err.message);
+      }
+    }
+
+    if (!pipeline) {
+      try {
+        console.log("Fetching accelerated pipeline from Notion...");
+        const pages = await queryAcceleratedPipeline(env.NOTION_TOKEN);
+        pipeline = transformAcceleratedPages(pages);
+        console.log(`Fetched ${pipeline.length} accelerated pipeline entries from Notion (${pages.length} pages queried)`);
+
+        if (env.DESK_KV) {
+          try {
+            await env.DESK_KV.put(ACCELERATED_CACHE_KEY, JSON.stringify({ data: pipeline, at: Date.now() }), {
+              expirationTtl: ACCELERATED_CACHE_TTL_SEC * 2
+            });
+            console.log("Cached accelerated pipeline in KV");
+          } catch (err) {
+            console.error("Failed to cache pipeline:", err.message);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch from Notion:", err.message, err.stack);
+        return json({ 
+          error: "Failed to fetch from Notion", 
+          message: err.message, 
+          fallback: true 
+        }, 502);
+      }
+    }
+
+    const res = json({ 
+      pipeline, 
+      count: pipeline.length,
+      cached: fromCache,
+      cached_at: Date.now() 
+    });
+    res.headers.set("Cache-Control", `private, max-age=${ACCELERATED_CACHE_TTL_SEC}`);
+    return res;
+  }
+
+  return json({ error: "not found" }, 404);
 }
 
 // ---------- helpers
