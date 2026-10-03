@@ -549,7 +549,8 @@ async function handleAcceleratedApi(request, env, url) {
         pipeline = transformAcceleratedPages(pages);
         console.log(`Fetched ${pipeline.length} accelerated pipeline entries from Notion (${pages.length} pages queried)`);
 
-        if (env.DESK_KV) {
+        // Only cache non-empty results; empty results may indicate an error that should not be cached
+        if (env.DESK_KV && pipeline.length > 0) {
           try {
             await env.DESK_KV.put(ACCELERATED_CACHE_KEY, JSON.stringify({ data: pipeline, at: Date.now() }), {
               expirationTtl: ACCELERATED_CACHE_TTL_SEC * 2
@@ -558,12 +559,15 @@ async function handleAcceleratedApi(request, env, url) {
           } catch (err) {
             console.error("Failed to cache pipeline:", err.message);
           }
+        } else if (pipeline.length === 0) {
+          console.warn("Skipping cache for empty pipeline result");
         }
       } catch (err) {
         console.error("Failed to fetch from Notion:", err.message, err.stack);
         return json({ 
           error: "Failed to fetch from Notion", 
-          message: err.message, 
+          message: err.message,
+          details: err.stack,
           fallback: true 
         }, 502);
       }

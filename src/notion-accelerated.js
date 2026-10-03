@@ -1,7 +1,9 @@
 // Notion integration for Accelerated Inertia — Pipeline database.
 // Maps Notion database properties to the shape expected by the Accelerated Inertia UI.
 
-const DATABASE_ID = "8ed354cc-e14d-4979-8d9c-6921d6654609";
+// Database page ID from https://app.notion.com/p/0498728f95b14930a4a7dfc7925d7d11
+// With Notion-Version 2022-06-28, use /v1/databases/{database_id}/query with the database page ID
+const DATABASE_ID = "0498728f-95b1-4930-a4a7-dfc7925d7d11";
 const NOTION_VERSION = "2022-06-28";
 
 export async function queryAcceleratedPipeline(notionToken) {
