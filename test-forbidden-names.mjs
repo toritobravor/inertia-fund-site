@@ -20,7 +20,8 @@ const FILES_TO_CHECK = [
   'src/notion-accelerated.js',
   'public/desk/accelerated/index.html',
   'public/desk/accelerated/style.css',
-  'public/desk/accelerated/app.js'
+  'public/desk/accelerated/app.js',
+  'public/desk/accelerated/mock-data.js'
 ];
 
 function checkFile(filePath) {
