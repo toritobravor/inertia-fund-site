@@ -22,6 +22,79 @@
   // ---------- helpers
   const esc = s => String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
   const fmt = n => n==null ? "—" : n.toFixed(1);
+
+  // Snowflake/radar chart for 8 axes
+  function snowflake(scores, size = 'large') {
+    if (!scores) return '';
+    
+    const W = size === 'mini' ? 120 : 280;
+    const H = size === 'mini' ? 120 : 280;
+    const cx = W / 2;
+    const cy = H / 2;
+    const R = size === 'mini' ? 45 : 100;
+    const n = 8;
+    
+    const shortNames = ['Sold', 'Unit econ', 'Made', 'Financed', 'Improves', 'Regime', 'Team', 'Price'];
+    const keys = ['D', 'U', 'M', 'F', 'I', 'R', 'T', 'P'];
+    
+    const angle = i => (-90 + i * 45) * Math.PI / 180;
+    const pt = (i, rad) => [cx + rad * Math.cos(angle(i)), cy + rad * Math.sin(angle(i))];
+    
+    let svg = '';
+    
+    // Rings at 0, 2 (DIVE floor), 3 (IC floor), 5
+    const rings = [
+      { r: 0.4, color: 'var(--hair)', width: 0.5, dash: '' },
+      { r: 0.8, color: 'var(--hair)', width: 0.5, dash: '' },
+      { r: 2/5, color: 'var(--ink3)', width: 1, dash: '3 2', label: size !== 'mini' }, // DIVE floor
+      { r: 3/5, color: 'var(--ink3)', width: 1, dash: '3 2', label: size !== 'mini' }, // IC floor
+      { r: 4/5, color: 'var(--hair)', width: 0.5, dash: '' },
+      { r: 1, color: 'var(--hair)', width: 1, dash: '' }
+    ];
+    
+    rings.forEach(ring => {
+      const rad = R * ring.r;
+      const points = Array.from({length: n}, (_, i) => pt(i, rad).join(',')).join(' ');
+      svg += `<polygon points="${points}" fill="none" stroke="${ring.color}" stroke-width="${ring.width}" ${ring.dash ? `stroke-dasharray="${ring.dash}"` : ''}/>`;
+    });
+    
+    // Radial lines
+    for (let i = 0; i < n; i++) {
+      const [x, y] = pt(i, R);
+      svg += `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="var(--hair)" stroke-width="0.5"/>`;
+    }
+    
+    // Data shape
+    const dataPoints = keys.map((k, i) => {
+      const score = scores[k] || 0;
+      const rad = R * Math.max(0.1, score / 5);
+      return pt(i, rad).join(',');
+    }).join(' ');
+    
+    svg += `<polygon points="${dataPoints}" fill="var(--arc)" fill-opacity="0.15" stroke="var(--arc)" stroke-width="2" stroke-linejoin="round"/>`;
+    
+    // Data points
+    keys.forEach((k, i) => {
+      const score = scores[k] || 0;
+      const rad = R * Math.max(0.1, score / 5);
+      const [x, y] = pt(i, rad);
+      svg += `<circle cx="${x}" cy="${y}" r="${size === 'mini' ? 2 : 3}" fill="var(--arc)"/>`;
+    });
+    
+    // Labels (skip for mini)
+    if (size !== 'mini') {
+      keys.forEach((k, i) => {
+        const [x, y] = pt(i, R + 24);
+        const score = scores[k] || 0;
+        const anchor = Math.abs(x - cx) < 5 ? 'middle' : (x > cx ? 'start' : 'end');
+        const dy = y < cy - 10 ? -4 : (y > cy + 10 ? 12 : 4);
+        svg += `<text x="${x}" y="${y + dy}" text-anchor="${anchor}" font-family="var(--mono)" font-size="10" fill="var(--ink3)">${shortNames[i]}</text>`;
+        svg += `<text x="${x}" y="${y + dy + 11}" text-anchor="${anchor}" font-family="var(--mono)" font-size="11" font-weight="500" fill="var(--ink)">${score}</text>`;
+      });
+    }
+    
+    return `<svg viewBox="0 0 ${W} ${H}" style="width:${W}px;height:${H}px">${svg}</svg>`;
+  }
   
   function autoLink(text) {
     if (!text) return '';
@@ -68,6 +141,27 @@
     if (amount == null || amount === '') return 'not verified';
     if (typeof amount === 'number') return `$${amount}M`;
     return String(amount);
+  }
+
+  function parsePartnerQuestions(text) {
+    if (!text) return [];
+    const lines = String(text).split('\n').filter(l => l.trim());
+    const qa = [];
+    let currentQ = null;
+    
+    lines.forEach(line => {
+      if (line.match(/^Q:/i)) {
+        if (currentQ) qa.push(currentQ);
+        currentQ = { q: line.replace(/^Q:\s*/i, '').trim(), a: '' };
+      } else if (line.match(/^A:/i) && currentQ) {
+        currentQ.a = line.replace(/^A:\s*/i, '').trim();
+      } else if (currentQ && currentQ.a) {
+        currentQ.a += ' ' + line.trim();
+      }
+    });
+    
+    if (currentQ) qa.push(currentQ);
+    return qa;
   }
 
   // ---------- data loading
@@ -193,10 +287,13 @@
     } else {
       container.innerHTML = v.map(d => {
         const stressBadge = d.stressResult != null ? `<span class="pill ${d.stressResult?'Pass':'Fail'}">${d.stressResult?'✓':'✗'}</span>` : '';
+        const miniSnowflake = d.scores ? `<div class="mini-snow">${snowflake(d.scores, 'mini')}</div>` : '';
+        const thesisLine = d.thesis ? `<span class="thesis-line">${esc(d.thesis.slice(0,80))}${d.thesis.length>80?'...':''}</span>` : '';
         return `
-          <button class="row" role="option" data-id="${d.id}" aria-current="${current===d.id}">
+          <button class="row ${d.scores?'with-snow':''}" role="option" data-id="${d.id}" aria-current="${current===d.id}">
+            ${miniSnowflake}
             <span class="sc ${d.composite==null?'na':''}">${d.composite==null?"—":fmt(d.composite)}</span>
-            <span><span class="nm">${d.rank?`${d.rank}. `:''}${esc(d.company)}</span><span class="meta">${esc(d.country||"")} ${stressBadge}</span></span>
+            <span><span class="nm">${d.rank?`${d.rank}. `:''}${esc(d.company)}</span>${thesisLine}<span class="meta">${esc(d.country||"")} ${stressBadge}</span></span>
             <span class="pill ${d.action||'STOP'}">${d.action||'—'}</span>
           </button>
         `;
@@ -305,11 +402,52 @@
       </div>
     `;
 
+    // Build thesis proof box
+    let thesisProofHtml = '';
+    if (d.proofSoldAgain || d.proofMadeAgain || d.proofFinancedAgain || d.thesisVerdict) {
+      const verdictBadge = d.thesisVerdict 
+        ? `<div style="margin-top:12px"><span class="pill ${d.thesisVerdict.toLowerCase().includes('clears')?'Pass':'Fail'} solid" style="font-size:12px;padding:6px 12px">${esc(d.thesisVerdict)}</span></div>`
+        : '';
+      thesisProofHtml = `
+        <section class="blk">
+          <h3>Can this already-sold product be sold, made and financed again?</h3>
+          <div class="thesis-proof">
+            ${d.proofSoldAgain?`<div class="proof-col"><h4>Proof: sold again</h4><p>${autoLink(esc(d.proofSoldAgain))}</p></div>`:''}
+            ${d.proofMadeAgain?`<div class="proof-col"><h4>Proof: made again</h4><p>${autoLink(esc(d.proofMadeAgain))}</p></div>`:''}
+            ${d.proofFinancedAgain?`<div class="proof-col"><h4>Proof: financed again</h4><p>${autoLink(esc(d.proofFinancedAgain))}</p></div>`:''}
+          </div>
+          ${verdictBadge}
+        </section>
+      `;
+    }
+
+    // Build partner questions
+    let partnerQuestionsHtml = '';
+    if (d.partnerQuestions) {
+      const qa = parsePartnerQuestions(d.partnerQuestions);
+      if (qa.length > 0) {
+        partnerQuestionsHtml = `
+          <section class="blk">
+            <h3>Partner questions</h3>
+            <div class="qa-list">
+              ${qa.map(item => `
+                <div class="qa-item">
+                  <div class="qa-q"><strong>Q:</strong> ${autoLink(esc(item.q))}</div>
+                  <div class="qa-a"><strong>A:</strong> ${autoLink(esc(item.a))}</div>
+                </div>
+              `).join('')}
+            </div>
+          </section>
+        `;
+      }
+    }
+
     m.innerHTML = `
       <div class="head">
         <div>
           <div class="eyebrow">${esc(d.country||'')} ${d.founded?`· Founded ${esc(d.founded)}`:''}${d.hq?` · HQ ${esc(d.hq)}`:''}</div>
           <h2>${esc(d.company)}</h2>
+          ${d.thesis?`<div class="thesis-subtitle">${autoLink(esc(d.thesis))}</div>`:''}
           <div class="kv">
             ${d.website?`<a href="${esc(d.website)}" target="_blank" rel="noopener">Website ↗</a>`:''}
             ${d.stage?`<span>Stage: ${esc(d.stage)}</span>`:''}
@@ -329,11 +467,21 @@
         </div>
       </div>
 
+      ${d.companyDescription?`<section class="blk"><p style="font-size:15px;color:var(--ink2);line-height:1.6">${autoLink(esc(d.companyDescription))}</p></section>`:''}
+
+      ${d.scores?`<section class="blk"><div class="snowflake-composite"><div class="snowflake-chart">${snowflake(d.scores)}</div><div class="composite-info"><div class="eyebrow">8-axis composite</div><div class="big-score">${fmt(d.composite)}<span>/100</span></div><div class="note small">DIVE floor at 2 (dashed), IC floor at 3 (dashed)</div></div></div></section>`:''}
+
+      ${thesisProofHtml}
+
       ${d.whatTheySell?`<section class="blk"><h3>What they sell</h3><div class="ticket"><div style="grid-column:1/-1;font-size:14px;color:var(--ink2)">${autoLink(esc(d.whatTheySell))}</div></div></section>`:''}
+
+      ${d.businessCase?`<section class="blk"><h3>Business case</h3><p>${autoLink(esc(d.businessCase))}</p></section>`:''}
 
       ${linksHtml}
 
       ${d.businessCase?`<section class="blk"><h3>Business case</h3><p>${autoLink(esc(d.businessCase))}</p></section>`:''}
+
+      ${partnerQuestionsHtml}
 
       ${d.customersProof?`<section class="blk"><h3>Customers & proof</h3><p>${autoLink(esc(d.customersProof))}</p></section>`:''}
 

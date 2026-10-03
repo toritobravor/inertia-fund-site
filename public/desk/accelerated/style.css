@@ -91,6 +91,10 @@ li{margin:6px 0}
 .row>span:nth-child(2){display:flex;flex-direction:column;min-width:0}
 .row .nm{font-size:14px;line-height:1.2}
 .row .meta{font-family:var(--mono);font-size:10.5px;color:var(--ink3);letter-spacing:.04em;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .thesis-line{display:block;font-size:11px;color:var(--ink2);line-height:1.3;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-style:italic}
+.row.with-snow{padding-left:8px}
+.row .mini-snow{position:absolute;left:8px;top:50%;transform:translateY(-50%);opacity:0.7}
+.row .mini-snow svg{display:block}
 .pill{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;padding:3px 7px;border:1px solid currentColor;line-height:1;border-radius:2px}
 .pill.STOP{color:var(--stop)} .pill.WATCH{color:var(--watch)} .pill.DIVE{color:var(--dive)} .pill.SITE{color:var(--site)}
 .pill.WATCH-PRICE{color:var(--watch)}
@@ -105,6 +109,9 @@ li{margin:6px 0}
 .main{padding:26px 34px 60px;max-width:1120px;background:var(--ground)}
 .head{display:grid;grid-template-columns:1fr auto;gap:18px 30px;align-items:start;padding-bottom:18px;border-bottom:1px solid var(--hair)}
 .head h2{font-size:34px;line-height:1.05}
+.thesis-subtitle{font-size:18px;line-height:1.4;color:var(--ink2);margin:8px 0 12px;font-style:italic;max-width:60ch}
+.thesis-subtitle a{color:var(--arc);text-decoration:none}
+.thesis-subtitle a:hover{text-decoration:underline}
 .head .kv{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:8px;color:var(--ink3);font-family:var(--mono);font-size:12px;letter-spacing:.04em}
 .head .kv a{color:var(--arc);text-decoration:none}
 .head .kv a:hover{text-decoration:underline}
@@ -145,6 +152,28 @@ section.blk h3{font-size:20px;margin-bottom:12px}
 .flag{background:var(--paper);border:1px solid var(--hair);padding:6px 12px;font-size:13px;border-radius:4px;color:var(--ink2)}
 .empty{padding:40px 20px;text-align:center;color:var(--ink3);font-style:italic}
 
+/* snowflake */
+.snowflake-composite{display:grid;grid-template-columns:280px 1fr;gap:30px;align-items:center}
+.snowflake-chart{display:flex;justify-content:center}
+.composite-info{display:flex;flex-direction:column;gap:8px}
+.composite-info .big-score{font-family:var(--mono);font-size:48px;font-weight:500;line-height:1}
+.composite-info .big-score span{font-size:16px;color:var(--ink3);font-weight:400}
+
+/* thesis proof */
+.thesis-proof{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;margin:12px 0}
+.proof-col h4{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin:0 0 8px}
+.proof-col p{margin:0;font-size:14px;color:var(--ink2);line-height:1.6}
+.proof-col a{color:var(--arc);text-decoration:none}
+.proof-col a:hover{text-decoration:underline}
+
+/* partner questions */
+.qa-list{display:flex;flex-direction:column;gap:16px}
+.qa-item{border-left:3px solid var(--hair);padding-left:16px}
+.qa-q{font-size:14px;color:var(--ink);margin-bottom:6px;line-height:1.5}
+.qa-a{font-size:14px;color:var(--ink2);line-height:1.6}
+.qa-q a,.qa-a a{color:var(--arc);text-decoration:none}
+.qa-q a:hover,.qa-a a:hover{text-decoration:underline}
+
 /* page content */
 .page-content{display:none;padding:40px;max-width:900px;margin:0 auto}
 .page-content.active{display:block}
@@ -161,10 +190,16 @@ section.blk h3{font-size:20px;margin-bottom:12px}
   .main{padding:20px}
   .head{grid-template-columns:1fr;gap:16px}
   .head h2{font-size:26px}
+  .thesis-subtitle{font-size:16px}
   .scoreblock{text-align:left;align-items:flex-start}
   .actions{justify-content:flex-start}
   .axis{grid-template-columns:1fr;gap:8px}
   .axis .bar{display:none}
   .linkbox{padding:14px}
   .page-inner{padding:24px}
+  .snowflake-composite{grid-template-columns:1fr;gap:20px}
+  .snowflake-chart{justify-content:flex-start}
+  .thesis-proof{grid-template-columns:1fr}
+  .row .mini-snow{display:none}
+  .row .thesis-line{display:none}
 }
