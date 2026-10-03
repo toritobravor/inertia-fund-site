@@ -83,6 +83,8 @@ li{margin:6px 0}
 .toggle-option:hover{background:var(--sunk)}
 .toggle-option.active{background:var(--ink);color:var(--ground)}
 .list{overflow:auto;flex:1}
+.list-group-header{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);padding:16px 16px 6px;font-weight:600}
+.list-note{font-size:13px;line-height:1.5;color:var(--ink2);padding:8px 16px 12px;border-bottom:1px solid var(--hair);font-style:italic}
 .row{display:grid;grid-template-columns:44px 1fr auto;gap:10px;align-items:center;padding:9px 16px;border:0;border-bottom:1px solid var(--hair);background:transparent;color:var(--ink);width:100%;text-align:left}
 .row:hover{background:var(--sunk)}
 .row[aria-current=true]{background:var(--paper);box-shadow:inset 3px 0 0 var(--arc)}
@@ -137,6 +139,7 @@ section.blk h3{font-size:20px;margin-bottom:12px}
 .axis .aw{font-family:var(--mono);font-size:11px;color:var(--ink3)}
 .axis .as{font-family:var(--mono);font-size:16px;font-weight:500;text-align:right}
 .axis .as.low{color:var(--arc)}
+.axis .as.na{color:var(--ink4);font-size:12px;font-weight:400}
 .axis .bar{display:flex;align-items:center;height:20px}
 .axis .bar i{display:block;height:100%;background:var(--ink3);border-radius:2px}
 .axis .bar .w0{width:0} .axis .bar .w1{width:20%} .axis .bar .w2{width:40%} .axis .bar .w3{width:60%} .axis .bar .w4{width:80%} .axis .bar .w5{width:100%}
