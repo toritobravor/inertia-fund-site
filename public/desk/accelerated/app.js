@@ -14,16 +14,21 @@
     ['P', 'Price', 0.08]
   ];
 
+  let loadError = null;
+
   async function loadData() {
     try {
       const res = await fetch("/desk/api/accelerated", { credentials: "same-origin", cache: "no-store" });
       if (res.ok) {
         const body = await res.json();
         DATA = body.pipeline || [];
+        loadError = null;
         console.log(`Loaded ${DATA.length} accelerated pipeline entries from ${body.cached ? 'cache' : 'Notion API'}`);
       } else {
         const errBody = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
-        console.error("API error:", errBody.error || `HTTP ${res.status}`);
+        const errorMsg = errBody.message || errBody.error || `HTTP ${res.status}`;
+        loadError = `API error: ${errorMsg}`;
+        console.error("API error:", errBody);
         if (window.__ACCELERATED_MOCK__) {
           console.log("Using mock data for local development");
           DATA = window.__ACCELERATED_MOCK__;
@@ -32,6 +37,7 @@
         }
       }
     } catch (err) {
+      loadError = `Failed to load pipeline: ${err.message}`;
       console.error("Failed to load pipeline:", err);
       if (window.__ACCELERATED_MOCK__) {
         console.log("Using mock data for local development");
@@ -78,6 +84,14 @@
     const container = document.getElementById('scout-list');
     if (!container) return;
 
+    if (loadError) {
+      container.innerHTML = `<div style="padding: 1.5rem; background: var(--warn); border-radius: 6px; margin: 1rem 0;">
+        <strong>Error loading data:</strong><br>${esc(loadError)}<br>
+        <small style="margin-top: 0.5rem; display: block;">Check the browser console and Worker logs for details.</small>
+      </div>`;
+      return;
+    }
+
     if (DATA.length === 0) {
       container.innerHTML = '<p class="eyebrow">No scout results available.</p>';
       return;
@@ -104,6 +118,14 @@
     const container = document.getElementById('grades-list');
     const detailPanel = document.getElementById('detail-panel');
     if (!container) return;
+
+    if (loadError) {
+      container.innerHTML = `<div style="padding: 1.5rem; background: var(--warn); border-radius: 6px; margin: 1rem 0;">
+        <strong>Error loading data:</strong><br>${esc(loadError)}<br>
+        <small style="margin-top: 0.5rem; display: block;">Check the browser console and Worker logs for details.</small>
+      </div>`;
+      return;
+    }
 
     const graded = DATA.filter(d => d.composite != null);
     
