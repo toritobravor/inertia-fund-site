@@ -1,0 +1,179 @@
+// Notion integration for Accelerated Inertia — Pipeline database.
+// Maps Notion database properties to the shape expected by the Accelerated Inertia UI.
+
+const DATABASE_ID = "8ed354cc-e14d-4979-8d9c-6921d6654609";
+const NOTION_VERSION = "2022-06-28";
+
+export async function queryAcceleratedPipeline(notionToken) {
+  if (!notionToken) throw new Error("NOTION_TOKEN is not set");
+
+  const allPages = [];
+  let hasMore = true;
+  let startCursor = undefined;
+
+  while (hasMore) {
+    const url = `https://api.notion.com/v1/databases/${DATABASE_ID}/query`;
+    const body = {
+      page_size: 100
+    };
+    if (startCursor) body.start_cursor = startCursor;
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${notionToken}`,
+        "Notion-Version": NOTION_VERSION,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Notion API error ${response.status}: ${text}`);
+    }
+
+    const data = await response.json();
+    allPages.push(...data.results);
+    hasMore = data.has_more;
+    startCursor = data.next_cursor;
+  }
+
+  return allPages;
+}
+
+function prop(page, name) {
+  const p = page.properties[name];
+  if (!p) return null;
+
+  switch (p.type) {
+    case "title":
+      return p.title.map(t => t.plain_text).join("");
+    case "rich_text":
+      return p.rich_text.map(t => t.plain_text).join("");
+    case "number":
+      return p.number;
+    case "select":
+      return p.select ? p.select.name : null;
+    case "multi_select":
+      return p.multi_select.map(s => s.name);
+    case "checkbox":
+      return p.checkbox;
+    case "url":
+      return p.url;
+    case "date":
+      return p.date ? p.date.start : null;
+    case "formula":
+      if (p.formula.type === "number") return p.formula.number;
+      if (p.formula.type === "string") return p.formula.string;
+      if (p.formula.type === "boolean") return p.formula.boolean;
+      return null;
+    case "people":
+      return p.people.map(person => person.name || person.id);
+    default:
+      return null;
+  }
+}
+
+// Compute composite as fallback if formula is null
+// Composite = 20 × (0.20 D + 0.16 U + 0.13 M + 0.13 F + 0.12 I + 0.09 R + 0.09 T + 0.08 P)
+function computeComposite(scores) {
+  if (!scores) return null;
+  const weights = {
+    D: 0.20,
+    U: 0.16,
+    M: 0.13,
+    F: 0.13,
+    I: 0.12,
+    R: 0.09,
+    T: 0.09,
+    P: 0.08
+  };
+  
+  const axes = ['D', 'U', 'M', 'F', 'I', 'R', 'T', 'P'];
+  if (axes.some(k => typeof scores[k] !== 'number')) return null;
+  
+  const sum = axes.reduce((acc, k) => acc + weights[k] * scores[k], 0);
+  return Math.round(sum * 20 * 10) / 10;
+}
+
+export function mapAcceleratedPageToCard(page) {
+  const company = prop(page, "Company");
+  if (!company) return null;
+
+  const scores = {
+    D: prop(page, "D Sold again"),
+    U: prop(page, "U Unit economics"),
+    M: prop(page, "M Made again"),
+    F: prop(page, "F Financed again"),
+    I: prop(page, "I Improves again"),
+    R: prop(page, "R Regime portability"),
+    T: prop(page, "T Team"),
+    P: prop(page, "P Price")
+  };
+
+  const haveScores = Object.values(scores).some(v => typeof v === 'number');
+  const finalScores = haveScores ? scores : null;
+
+  const compositeFormula = prop(page, "Composite");
+  const composite = compositeFormula != null ? compositeFormula : computeComposite(finalScores);
+
+  const stressedComposite = prop(page, "Stressed composite");
+  const stressResult = prop(page, "Stress result (>=55)");
+  
+  const floorDive = prop(page, "Floor check DIVE (D,U>=2)");
+  const floorIc = prop(page, "Floor check IC1/IC2 (D,U,P>=3)");
+
+  return {
+    id: page.id.replace(/-/g, ""),
+    company,
+    rank: prop(page, "Rank"),
+    scores: finalScores,
+    composite,
+    stage: prop(page, "Stage"),
+    action: prop(page, "Action"),
+    gates: prop(page, "Gates A1-A9"),
+    floorDive,
+    floorIc,
+    stressedComposite,
+    worstShock: prop(page, "Worst shock"),
+    stressSpread: prop(page, "Stress spread"),
+    stressResult,
+    regimeDependent: prop(page, "Regime-dependent"),
+    dealFitL: prop(page, "Deal Fit L (leverage)"),
+    dealFitLStatus: prop(page, "Deal Fit L status"),
+    dealFitP: prop(page, "Deal Fit P (price)"),
+    dealFitPortfolio: prop(page, "Deal Fit Portfolio fit"),
+    flagDiscretionary: prop(page, "Flag: discretionary subsidy share"),
+    flagCompliance: prop(page, "Flag: compliance-mandated share"),
+    flagRunway: prop(page, "Flag: runway"),
+    flagCompetition: prop(page, "Flag: competition"),
+    flagAlignment: prop(page, "Flag: alignment"),
+    whyThisOne: prop(page, "Why this one"),
+    thesis: prop(page, "Thesis"),
+    methodologyVersion: prop(page, "Methodology version"),
+    scoreStatus: prop(page, "Score status"),
+    gradedBy: prop(page, "Graded by"),
+    gradeDate: prop(page, "Grade date"),
+    dataConfidence: prop(page, "Data confidence"),
+    rationaleAndSources: prop(page, "Rationale and sources"),
+    unknowns: prop(page, "Unknowns"),
+    watchTrigger: prop(page, "Watch trigger"),
+    scoutSummary: prop(page, "Scout summary"),
+    foundBy: prop(page, "Found by"),
+    dateFound: prop(page, "Date found"),
+    scoutSource: prop(page, "Scout source"),
+    website: prop(page, "Website"),
+    keyPeople: prop(page, "Key people"),
+    lastRaise: prop(page, "Last raise"),
+    country: prop(page, "Country"),
+    bottleneck: prop(page, "Bottleneck"),
+    aiDependence: prop(page, "AI dependence"),
+    originRisk: prop(page, "Origin risk"),
+    humanIntuition: prop(page, "Human intuition")
+  };
+}
+
+export function transformAcceleratedPages(pages) {
+  return pages.map(mapAcceleratedPageToCard).filter(card => card !== null);
+}

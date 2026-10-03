@@ -6,7 +6,8 @@
   "description": "Website for Inertia Fund — inertia.fund",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "test": "node test-forbidden-names.mjs"
   },
   "devDependencies": {
     "wrangler": "^4.129.0"

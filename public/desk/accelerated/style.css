@@ -1,0 +1,390 @@
+@import url("/styles.css");
+@import url("/desk/desk.css");
+
+:root {
+  --arc: #CC4318;
+  --ink: #1a1a1a;
+  --ink2: #525252;
+  --ink3: #858585;
+  --hair: #e0e0e0;
+  --bg: #fafafa;
+  --warn: #fef3cd;
+  --mono: "IBM Plex Mono", monospace;
+  --sans: "Public Sans", system-ui, sans-serif;
+  --display: "Baskervville", serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--sans);
+  color: var(--ink);
+  background: var(--bg);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.deskbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1.5rem;
+  border-bottom: 1px solid var(--hair);
+  background: white;
+  font-size: 0.875rem;
+}
+
+.deskbar a {
+  color: var(--arc);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.deskbar a:hover {
+  text-decoration: underline;
+}
+
+.mast {
+  padding: 2rem 1.5rem;
+  background: white;
+  border-bottom: 1px solid var(--hair);
+}
+
+.mast h1 {
+  font-family: var(--display);
+  font-size: 2.5rem;
+  margin: 0.5rem 0;
+}
+
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink2);
+  margin-bottom: 0.5rem;
+}
+
+.sub {
+  color: var(--ink2);
+  max-width: 65ch;
+  margin-top: 1rem;
+  line-height: 1.7;
+}
+
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  padding: 1rem 1.5rem 0;
+  background: white;
+  border-bottom: 1px solid var(--hair);
+}
+
+.tab {
+  background: none;
+  border: none;
+  padding: 0.75rem 1.25rem;
+  font-family: var(--sans);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--ink2);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.tab:hover {
+  color: var(--ink);
+}
+
+.tab.active {
+  color: var(--arc);
+  border-bottom-color: var(--arc);
+}
+
+.wrap {
+  max-width: 90rem;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.view {
+  display: none;
+}
+
+.view.active {
+  display: block;
+}
+
+.blk {
+  background: white;
+  border: 1px solid var(--hair);
+  border-radius: 6px;
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+.blk h2 {
+  font-family: var(--display);
+  font-size: 1.75rem;
+  margin-bottom: 1rem;
+}
+
+.blk h3 {
+  font-family: var(--display);
+  font-size: 1.375rem;
+  margin: 1.5rem 0 0.75rem;
+}
+
+.blk h3:first-child {
+  margin-top: 0;
+}
+
+.lead {
+  font-size: 1.125rem;
+  line-height: 1.7;
+  margin-bottom: 1rem;
+}
+
+.blk p {
+  margin-bottom: 1rem;
+}
+
+.blk ul, .blk ol {
+  margin-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.blk li {
+  margin-bottom: 0.5rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+th, td {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--hair);
+}
+
+th {
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink2);
+}
+
+td.n {
+  font-family: var(--mono);
+  text-align: right;
+}
+
+.card {
+  background: white;
+  border: 1px solid var(--hair);
+  border-radius: 6px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  transition: box-shadow 0.2s;
+  cursor: pointer;
+}
+
+.card:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 1rem;
+}
+
+.card-title {
+  font-family: var(--display);
+  font-size: 1.375rem;
+  margin-bottom: 0.25rem;
+}
+
+.card-meta {
+  font-size: 0.875rem;
+  color: var(--ink2);
+}
+
+.pill {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--hair);
+  color: var(--ink);
+}
+
+.pill.STOP { background: #fee; color: #c00; }
+.pill.WATCH { background: #fef3cd; color: #856404; }
+.pill.WATCH-PRICE { background: #d1ecf1; color: #0c5460; }
+.pill.DIVE { background: #d4edda; color: #155724; }
+.pill.Pass { background: #d4edda; color: #155724; }
+.pill.Fail { background: #fee; color: #c00; }
+
+.score-badge {
+  font-family: var(--mono);
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--arc);
+}
+
+.detail-panel {
+  background: white;
+  border: 1px solid var(--hair);
+  border-radius: 6px;
+  padding: 2rem;
+  margin-top: 2rem;
+}
+
+.detail-header {
+  border-bottom: 2px solid var(--hair);
+  padding-bottom: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.detail-section {
+  margin-bottom: 2rem;
+}
+
+.detail-section h3 {
+  font-family: var(--display);
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+  color: var(--ink);
+}
+
+.axis-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.axis-row {
+  display: contents;
+}
+
+.axis-row > div {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--hair);
+}
+
+.axis-label {
+  font-weight: 500;
+}
+
+.axis-weight {
+  font-family: var(--mono);
+  color: var(--ink2);
+  text-align: right;
+}
+
+.axis-score {
+  font-family: var(--mono);
+  font-weight: 600;
+  text-align: right;
+}
+
+.flag {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  margin: 0.25rem;
+  background: var(--warn);
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+.deal-fit-box {
+  background: #f8f9fa;
+  border: 1px solid var(--hair);
+  border-left: 4px solid var(--arc);
+  padding: 1rem;
+  margin: 1rem 0;
+}
+
+.deal-fit-box h4 {
+  font-family: var(--mono);
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.rationale-source {
+  margin: 0.5rem 0;
+  line-height: 1.7;
+}
+
+.rationale-source a {
+  color: var(--arc);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.rationale-source a:hover {
+  text-decoration: underline;
+}
+
+.scout-card {
+  background: white;
+  border: 1px solid var(--hair);
+  border-radius: 6px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.scout-card h4 {
+  font-size: 1.125rem;
+  margin-bottom: 0.5rem;
+}
+
+.scout-meta {
+  font-size: 0.875rem;
+  color: var(--ink2);
+  margin-bottom: 0.75rem;
+}
+
+.scout-summary {
+  margin-bottom: 0.5rem;
+}
+
+.scout-source {
+  font-size: 0.875rem;
+}
+
+.scout-source a {
+  color: var(--arc);
+  text-decoration: none;
+}
+
+.scout-source a:hover {
+  text-decoration: underline;
+}
+
+#scout-list:empty::after,
+#grades-list:empty::after {
+  content: "Loading...";
+  display: block;
+  padding: 2rem;
+  text-align: center;
+  color: var(--ink2);
+}

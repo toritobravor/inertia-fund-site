@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Accelerated Inertia — Inertia Fund Desk</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/desk/accelerated/style.css">
+</head>
+<body>
+<div class="deskbar"><a href="https://inertia.fund">← Desk</a><span>Inertia Fund · internal · scores are judgments</span><a href="/cdn-cgi/access/logout">Sign out</a></div>
+<header class="mast">
+  <div>
+    <div class="eyebrow">Inertia Fund · Accelerated Inertia · Methodology v1.2 (draft, pending committee review) · Updated 3 Oct 2026</div>
+    <h1>Accelerated Inertia</h1>
+    <div class="sub">The power system needs more capacity, faster than it can be built. Many products that help already work and already have a paying customer. What they lack is the second, tenth and hundredth order: a buyer who trusts them, a factory that can make them, and money to deploy them. Accelerated Inertia backs that step with growth capital and with people who have built and run power systems. We invest when the remaining risk is selling, making and financing the product again, because that is the risk we know how to manage.</div>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button class="tab active" data-view="purpose">Purpose</button>
+  <button class="tab" data-view="scout">Scout Results</button>
+  <button class="tab" data-view="grades">Grades &amp; Ranking</button>
+  <button class="tab" data-view="method">Method</button>
+  <button class="tab" data-view="changelog">Change Log</button>
+</nav>
+
+<div class="wrap">
+  <div id="view-purpose" class="view active">
+    <section class="blk">
+      <h2>The Question</h2>
+      <p class="lead">Can this already-sold product be sold, made and financed again?</p>
+      <p>The power system needs more capacity, faster than it can be built. Many products that help already work and already have a paying customer. What they lack is the second, tenth and hundredth order: a buyer who trusts them, a factory that can make them, and money to deploy them. Accelerated Inertia backs that step with growth capital and with people who have built and run power systems. We invest when the remaining risk is selling, making and financing the product again, because that is the risk we know how to manage.</p>
+    </section>
+  </div>
+
+  <div id="view-scout" class="view">
+    <section class="blk">
+      <h2>Scout Results</h2>
+      <p>Every candidate the Accelerated Inertia Scout brought forward.</p>
+      <div id="scout-list"></div>
+    </section>
+  </div>
+
+  <div id="view-grades" class="view">
+    <section class="blk">
+      <h2>Grades &amp; Ranking</h2>
+      <p class="eyebrow">Caroline grading under Methodology v1.2 — graded <span id="grade-date"></span></p>
+      <p class="eyebrow">Score status: <span id="score-status"></span></p>
+      <div id="grades-list"></div>
+    </section>
+    
+    <div id="detail-panel" class="detail-panel"></div>
+  </div>
+
+  <div id="view-method" class="view">
+    <section class="blk">
+      <h2>Methodology v1.2</h2>
+      <p class="eyebrow">Draft, 3 Oct 2026, pending investment committee review</p>
+      
+      <h3>Entry Gates A1–A9</h3>
+      <ul>
+        <li>Sold and measured</li>
+        <li>Money buys repetition</li>
+        <li>Repeatable product</li>
+        <li>Delivery risk not physics</li>
+        <li>Improvable</li>
+        <li>Purpose fit</li>
+        <li>Size and role fit: rounds of about $30–150m and our check of $20–75m as lead or co-lead</li>
+        <li>Counterparty</li>
+        <li>No open kill</li>
+      </ul>
+
+      <h3>Repeatability Scorecard</h3>
+      <p>Eight axes scored 0–5:</p>
+      <table>
+        <tr><th>Axis</th><th>Weight (%)</th></tr>
+        <tr><td>D — Sold again</td><td class="n">20</td></tr>
+        <tr><td>U — Unit economics and path to profit</td><td class="n">16</td></tr>
+        <tr><td>M — Made again</td><td class="n">13</td></tr>
+        <tr><td>F — Financed again</td><td class="n">13</td></tr>
+        <tr><td>I — Improves again</td><td class="n">12</td></tr>
+        <tr><td>R — Regime portability</td><td class="n">9</td></tr>
+        <tr><td>T — Team, incentives and governance</td><td class="n">9</td></tr>
+        <tr><td>P — Price and return path</td><td class="n">8</td></tr>
+      </table>
+      <p><strong>Composite = 20 × (0.20 D + 0.16 U + 0.13 M + 0.13 F + 0.12 I + 0.09 R + 0.09 T + 0.08 P)</strong></p>
+      <p>All 3s = 60. Unknown scores at most 2.</p>
+
+      <h3>Floors by Stage</h3>
+      <ul>
+        <li>DIVE needs D and U at 2 or more</li>
+        <li>IC1 and IC2 need D, U and P at 3 or more</li>
+      </ul>
+
+      <h3>Screening Actions</h3>
+      <ul>
+        <li><strong>STOP</strong>: A gate fails, a kill, D or U below 2, or composite below 45</li>
+        <li><strong>WATCH</strong>: 45–63.9</li>
+        <li><strong>WATCH-PRICE</strong>: DIVE-quality but P below 2</li>
+        <li><strong>DIVE</strong>: 64 or more with at least two axes at 4</li>
+      </ul>
+
+      <h3>Stress Overlay</h3>
+      <p>Six shocks: rates, AI data-center bust, policy reversal, tariffs/China, commodity swing, grid reform works.</p>
+      <p>The stressed composite is the lowest of the six. Threshold is 55 at every stage after screening. A spread above 10 marks the company regime-dependent.</p>
+
+      <h3>Deal Fit</h3>
+      <p>Reported beside the score and never blended into it:</p>
+      <ul>
+        <li><strong>L</strong> — Our leverage (scored by a partner who is not the sponsor)</li>
+        <li><strong>P</strong> — Price</li>
+        <li><strong>Portfolio fit</strong></li>
+      </ul>
+
+      <h3>Flags</h3>
+      <ul>
+        <li>Discretionary vs compliance-mandated subsidy share</li>
+        <li>Runway under 18 months</li>
+        <li>Competition (no written "why this one")</li>
+        <li>Alignment</li>
+      </ul>
+
+      <h3>Return Bar (proposed)</h3>
+      <p>3x by year five or 4x by year seven, 22% gross base case, bear case returns capital, credible 5x upside.</p>
+    </section>
+  </div>
+
+  <div id="view-changelog" class="view">
+    <section class="blk">
+      <h2>Change Log</h2>
+      <h3>v1.0 — 3 Oct 2026</h3>
+      <p>First version of the Accelerated Inertia app. Initial grading of 10 scout candidates under Methodology v1.2.</p>
+
+      <h3>Methodology v1.2 vs v1.1</h3>
+      <ul>
+        <li>One scorecard (the Investment Case Scorecard was withdrawn)</li>
+        <li>Deal Fit replaces the blended composite</li>
+        <li>Return bar reconciled with the 16–20% net target</li>
+        <li>Position limits of 10% initial / 20% total</li>
+        <li>Blind second score before IC1 and a dissent memo at IC2</li>
+        <li>An expedited track</li>
+        <li>Gate A6 split</li>
+        <li>Subsidy rule narrowed to discretionary subsidy</li>
+        <li>New runway, competition and alignment flags</li>
+        <li>The unknown rule closed</li>
+        <li>12-month outcome measures</li>
+        <li>A falsifiable outcome log</li>
+      </ul>
+    </section>
+  </div>
+</div>
+
+<!-- For local development with wrangler dev, uncomment the line below to use mock data -->
+<!-- <script src="/desk/accelerated/mock-data.js"></script> -->
+<script src="/desk/accelerated/app.js"></script>
+</body>
+</html>
