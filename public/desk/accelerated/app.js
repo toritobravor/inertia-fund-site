@@ -335,7 +335,7 @@
         <h3>Metadata</h3>
         <p><strong>Methodology version:</strong> ${esc(d.methodologyVersion || "—")}</p>
         <p><strong>Score status:</strong> ${esc(d.scoreStatus || "—")}</p>
-        <p><strong>Graded by:</strong> ${esc(d.gradedBy || "Investment Committee")}</p>
+        <p><strong>Graded by:</strong> ${esc(d.gradedBy || "—")}</p>
         <p><strong>Grade date:</strong> ${esc(d.gradeDate || "—")}</p>
         <p><strong>Data confidence:</strong> ${esc(d.dataConfidence || "—")}</p>
       </div>

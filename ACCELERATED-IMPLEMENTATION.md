@@ -68,7 +68,7 @@ This document summarizes the implementation of the Accelerated Inertia app at `a
 - Ranked cards with rank, composite /100, stressed composite, action, data confidence
 - Pass/Fail at 55 for stress result
 - Floor checks: DIVE (D, U ≥ 2) and IC1/IC2 (D, U, P ≥ 3)
-- Label: "Grading under Methodology v1.2 — graded <Grade date>"
+- Label: "Caroline grading under Methodology v1.2 — graded <Grade date>"
 - Score status displayed (e.g., "Graded (v1.2)")
 - Click a card to open detail panel
 
@@ -91,7 +91,7 @@ This document summarizes the implementation of the Accelerated Inertia app at `a
 - **Key people**: Leadership
 - **Last raise**: Financing history
 - **Website**: Company URL
-- **Metadata**: Methodology version, score status, graded by (sanitized to "Investment Committee"), grade date, data confidence
+- **Metadata**: Methodology version, score status, graded by (shown exactly as Notion has it, e.g., "Caroline"), grade date, data confidence
 - **Human Intuition**: Shown only if a value exists (read-only, never written)
 
 ### 5. Method View
@@ -132,8 +132,9 @@ This document summarizes the implementation of the Accelerated Inertia app at `a
 - Not in the PR title or body
 - Not in test fixtures
 
-✅ Sanitization:
-- "Graded by" field shows "Investment Committee" instead of partner names
+✅ Grading Attribution:
+- "Graded by" field shows exactly as Notion has it (e.g., "Caroline" for the AI grader)
+- Only partner personal names are blocked; "Caroline" (AI system) is allowed
 - Human Intuition field only shown if a value exists (read-only)
 
 ✅ CI/test check:
@@ -281,7 +282,7 @@ The app reads these properties from the "Accelerated Inertia — Pipeline" datab
 ### Metadata
 - Methodology version (select)
 - Score status (select)
-- Graded by (people, sanitized to "Investment Committee")
+- Graded by (people, shown exactly as Notion has it, e.g., "Caroline")
 - Grade date (date)
 - Data confidence (select)
 

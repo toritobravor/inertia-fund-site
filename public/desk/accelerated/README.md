@@ -125,7 +125,8 @@ FORBIDDEN_NAMES="alice,bob" npm test
 
 - The managing partner's personal name appears nowhere in code, comments, or commit messages
 - Human Intuition field is shown only if a value exists (read-only, never written)
-- Graded by field is sanitized to "Investment Committee"
+- Graded by field is shown exactly as Notion has it (e.g., "Caroline" for the AI grader)
+- Only partner personal names are blocked by the denylist; "Caroline" (AI system) is allowed
 - Test suite enforces name denylist via `FORBIDDEN_NAMES` environment variable
 
 ## Change Log
