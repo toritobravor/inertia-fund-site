@@ -132,6 +132,8 @@ export function mapAcceleratedPageToCard(page) {
     rank: prop(page, "Rank"),
     scores: finalScores,
     composite,
+    verifiedAxes: prop(page, "Verified axes"),
+    list: prop(page, "List"),
     stage: prop(page, "Stage"),
     action: prop(page, "Action"),
     gates: prop(page, "Gates A1-A9"),

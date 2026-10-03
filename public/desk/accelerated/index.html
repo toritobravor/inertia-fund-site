@@ -106,6 +106,10 @@
       <li><strong>DIVE</strong>: 64 or more with at least two axes at 4</li>
     </ul>
 
+    <h3>Not-available Rule</h3>
+    <p>An axis score can be blank ("Not available"), meaning it is not yet verified from evidence. A verified zero is different from an unverified blank. A score counts as Not available if the data is older than 24 months or is from before a change of control.</p>
+    <p>Not-available scores are excluded from the composite. A company is ranked once at least 6 of 8 axes, including Sold again (D) and Unit economics (U), are verified. Until then, it appears on the Needs data list, showing coverage as "n/8 verified" and sorted by verified-axis count.</p>
+
     <h3>Stress Overlay</h3>
     <p>Six shocks: rates, AI data-center bust, policy reversal, tariffs/China, commodity swing, grid reform works.</p>
     <p>The stressed composite is the lowest of the six. Threshold is 55 at every stage after screening. A spread above 10 marks the company regime-dependent.</p>
@@ -134,6 +138,9 @@
 <div class="page-content" id="changelog-view" style="display:none">
   <div class="page-inner">
     <h2>Change Log</h2>
+    
+    <h3>App v1.3 — 3 Oct 2026</h3>
+    <p>Not-available display, coverage counts, Needs data list. Axis scores can now be blank (Not available = unverified), distinct from verified 0. Sidebar split into Ranked and Needs data groups. Companies show "n/8 verified" when not ranked. Snowflake charts plot only verified axes, with unverified axes shown as dashed grey spokes labelled "N/A". Composite shows "Not ranked: n/8 verified" when blank. Stress block hidden when blank. "What we still need to verify" section shows Unknowns. Method page explains Not-available rule.</p>
     
     <h3>App v1.2 — 3 Oct 2026</h3>
     <p>Snowflake radar chart showing 8-axis scores with DIVE and IC floor rings. Thesis proof box with "Can this already-sold product be sold, made and financed again?" showing proof for sold/made/financed and verdict badge. Partner questions displayed as Q&A list. Thesis shown as prominent subtitle under company name in both main view and sidebar. Company description added above scorecard.</p>
