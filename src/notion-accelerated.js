@@ -103,6 +103,26 @@ export function mapAcceleratedPageToCard(page) {
   const company = prop(page, "Company");
   if (!company) return null;
 
+  // v1.3 screen scores (O1–O9)
+  const screenScores = {
+    O1: prop(page, "O1 Sold, quality-weighted"),
+    O2: prop(page, "O2 Repeat-order footprint"),
+    O3: prop(page, "O3 Footprint diversity"),
+    O4: prop(page, "O4 Validation of unit economics"),
+    O5: prop(page, "O5 Capital efficiency"),
+    O6: prop(page, "O6 Manufacturing repeatability"),
+    O7: prop(page, "O7 Team"),
+    O8: prop(page, "O8 Regime portability"),
+    O9: prop(page, "O9 Hiring momentum")
+  };
+  
+  const haveScreenScores = Object.values(screenScores).some(v => typeof v === 'number');
+  const finalScreenScores = haveScreenScores ? screenScores : null;
+  
+  const screenComposite = prop(page, "Screen composite");
+  const screenVerified = prop(page, "Screen verified (n/9)");
+
+  // v1.2 deep dive scores (D–P, legacy)
   const scores = {
     D: prop(page, "D Sold again"),
     U: prop(page, "U Unit economics"),
@@ -130,10 +150,14 @@ export function mapAcceleratedPageToCard(page) {
     id: page.id.replace(/-/g, ""),
     company,
     rank: prop(page, "Rank"),
+    screenScores: finalScreenScores,
+    screenComposite,
+    screenVerified,
     scores: finalScores,
     composite,
     verifiedAxes: prop(page, "Verified axes"),
     list: prop(page, "List"),
+    stopReason: prop(page, "Stop reason"),
     stage: prop(page, "Stage"),
     action: prop(page, "Action"),
     gates: prop(page, "Gates A1-A9"),

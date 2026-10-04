@@ -6,6 +6,20 @@
   let mode = "ranked"; // "ranked" or "scout"
   let loadError = null;
 
+  // v1.3 screen axes (O1–O9)
+  const SCREEN_AXES = [
+    ['O1', 'Sold', 0.20],
+    ['O2', 'Repeat', 0.16],
+    ['O3', 'Footprint', 0.13],
+    ['O4', 'Validation', 0.12],
+    ['O5', 'Capital', 0.11],
+    ['O6', 'Manufacturing', 0.10],
+    ['O7', 'Team', 0.08],
+    ['O8', 'Portability', 0.07],
+    ['O9', 'Hiring', 0.03]
+  ];
+
+  // v1.2 deep dive axes (D–P)
   const AXES = [
     ['D', 'Sold again', 0.20],
     ['U', 'Unit economics', 0.16],
@@ -23,7 +37,93 @@
   const esc = s => String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
   const fmt = n => n==null ? "—" : n.toFixed(1);
 
-  // Snowflake/radar chart for 8 axes
+  // Snowflake/radar chart for v1.3 screen (9 axes, 0-4 scale)
+  function screenSnowflake(scores, size = 'large') {
+    if (!scores) return '';
+    
+    const W = size === 'mini' ? 120 : 280;
+    const H = size === 'mini' ? 120 : 280;
+    const cx = W / 2;
+    const cy = H / 2;
+    const R = size === 'mini' ? 45 : 100;
+    const n = 9;
+    
+    const shortNames = ['Sold', 'Repeat', 'Footprint', 'Validation', 'Capital', 'Manufacturing', 'Team', 'Portability', 'Hiring'];
+    const keys = ['O1', 'O2', 'O3', 'O4', 'O5', 'O6', 'O7', 'O8', 'O9'];
+    
+    const angle = i => (-90 + i * 40) * Math.PI / 180;
+    const pt = (i, rad) => [cx + rad * Math.cos(angle(i)), cy + rad * Math.sin(angle(i))];
+    
+    let svg = '';
+    
+    // Rings at 0–4
+    const rings = [
+      { r: 0.25, color: 'var(--hair)', width: 0.5, dash: '' },
+      { r: 0.5, color: 'var(--hair)', width: 0.5, dash: '' },
+      { r: 0.75, color: 'var(--hair)', width: 0.5, dash: '' },
+      { r: 1, color: 'var(--hair)', width: 1, dash: '' }
+    ];
+    
+    rings.forEach(ring => {
+      const rad = R * ring.r;
+      const points = Array.from({length: n}, (_, i) => pt(i, rad).join(',')).join(' ');
+      svg += `<polygon points="${points}" fill="none" stroke="${ring.color}" stroke-width="${ring.width}" ${ring.dash ? `stroke-dasharray="${ring.dash}"` : ''}/>`;
+    });
+    
+    // Radial lines (verified: solid, not available: dashed grey)
+    for (let i = 0; i < n; i++) {
+      const k = keys[i];
+      const score = scores[k];
+      const isVerified = score != null;
+      const [x, y] = pt(i, R);
+      if (isVerified) {
+        svg += `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="var(--hair)" stroke-width="0.5"/>`;
+      } else {
+        svg += `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="var(--ink4)" stroke-width="0.5" stroke-dasharray="2 2"/>`;
+      }
+    }
+    
+    // Data shape - only through verified points
+    const verifiedPoints = [];
+    keys.forEach((k, i) => {
+      const score = scores[k];
+      if (score != null) {
+        const rad = R * Math.max(0.1, score / 4);
+        verifiedPoints.push({ i, pt: pt(i, rad) });
+      }
+    });
+    
+    if (verifiedPoints.length > 0) {
+      const polygonPoints = verifiedPoints.map(p => p.pt.join(',')).join(' ');
+      svg += `<polygon points="${polygonPoints}" fill="var(--arc)" fill-opacity="0.15" stroke="var(--arc)" stroke-width="2" stroke-linejoin="round"/>`;
+      
+      // Data points only on verified axes
+      verifiedPoints.forEach(p => {
+        svg += `<circle cx="${p.pt[0]}" cy="${p.pt[1]}" r="${size === 'mini' ? 2 : 3}" fill="var(--arc)"/>`;
+      });
+    }
+    
+    // Labels (skip for mini)
+    if (size !== 'mini') {
+      keys.forEach((k, i) => {
+        const [x, y] = pt(i, R + 24);
+        const score = scores[k];
+        const isVerified = score != null;
+        const anchor = Math.abs(x - cx) < 5 ? 'middle' : (x > cx ? 'start' : 'end');
+        const dy = y < cy - 10 ? -4 : (y > cy + 10 ? 12 : 4);
+        svg += `<text x="${x}" y="${y + dy}" text-anchor="${anchor}" font-family="var(--mono)" font-size="10" fill="${isVerified?'var(--ink3)':'var(--ink4)'}">${shortNames[i]}</text>`;
+        if (isVerified) {
+          svg += `<text x="${x}" y="${y + dy + 11}" text-anchor="${anchor}" font-family="var(--mono)" font-size="11" font-weight="500" fill="var(--ink)">${score}</text>`;
+        } else {
+          svg += `<text x="${x}" y="${y + dy + 11}" text-anchor="${anchor}" font-family="var(--mono)" font-size="10" fill="var(--ink4)">N/A</text>`;
+        }
+      });
+    }
+    
+    return `<svg viewBox="0 0 ${W} ${H}" style="width:${W}px;height:${H}px">${svg}</svg>`;
+  }
+
+  // Snowflake/radar chart for v1.2 deep dive (8 axes, 0-5 scale)
   function snowflake(scores, size = 'large') {
     if (!scores) return '';
     
@@ -240,7 +340,13 @@
     `;
     
     const firstDate = DATA.find(d => d.gradeDate)?.gradeDate || "";
+    const methodologyVersion = DATA.find(d => d.methodologyVersion)?.methodologyVersion || "v1.2";
+    const gradedBy = DATA.find(d => d.gradedBy)?.gradedBy || "Caroline";
+    
     document.getElementById('grade-date').textContent = firstDate;
+    document.getElementById('methodology-version').textContent = methodologyVersion;
+    document.getElementById('graded-by').textContent = gradedBy;
+    document.getElementById('graded-by-label').textContent = `${gradedBy} grading under Methodology ${methodologyVersion}`;
   }
 
   // ---------- chips
@@ -267,10 +373,11 @@
   }
 
   function groupByList(companies) {
-    const ranked = companies.filter(d => d.list === 'Ranked' || (d.list == null && d.composite != null));
-    const needsData = companies.filter(d => d.list === 'Needs data' || (d.list == null && d.composite == null && d.verifiedAxes != null));
+    const ranked = companies.filter(d => d.list === 'Ranked');
+    const stopped = companies.filter(d => d.list === 'Stopped');
+    const needsData = companies.filter(d => d.list === 'Needs data');
     
-    // Sort ranked by rank, then composite
+    // Sort ranked by rank
     ranked.sort((a,b) => {
       if (mode === 'scout') {
         return String(b.dateFound||"").localeCompare(String(a.dateFound||""));
@@ -278,21 +385,21 @@
       if (a.rank != null && b.rank != null) return a.rank - b.rank;
       if (a.rank != null) return -1;
       if (b.rank != null) return 1;
-      const oa = ORDER[a.action] ?? 999;
-      const ob = ORDER[b.action] ?? 999;
-      if (oa !== ob) return oa - ob;
-      return (b.composite||0) - (a.composite||0);
+      return a.company.localeCompare(b.company);
     });
+    
+    // Sort stopped by name
+    stopped.sort((a,b) => a.company.localeCompare(b.company));
     
     // Sort needs data by verified axes descending, then name
     needsData.sort((a,b) => {
-      const va = a.verifiedAxes ?? 0;
-      const vb = b.verifiedAxes ?? 0;
+      const va = a.screenVerified ?? a.verifiedAxes ?? 0;
+      const vb = b.screenVerified ?? b.verifiedAxes ?? 0;
       if (vb !== va) return vb - va;
       return a.company.localeCompare(b.company);
     });
     
-    return { ranked, needsData };
+    return { ranked, stopped, needsData };
   }
 
   function renderList() {
@@ -318,24 +425,41 @@
         </button>
       `).join('');
     } else {
-      const { ranked, needsData } = groupByList(v);
+      const { ranked, stopped, needsData } = groupByList(v);
       let html = '';
       
       // Ranked group
       html += `<div class="list-group-header">Ranked</div>`;
       if (ranked.length === 0) {
-        html += `<div class="list-note">No company is ranked yet. A company is ranked once at least 6 of 8 axes, including Sold again and Unit economics, are verified from evidence. Founder calls fill the gaps.</div>`;
+        html += `<div class="list-note">No company is ranked yet. A company is ranked once at least 7 of 9 axes, including O1 and O2, are verified from evidence. Founder calls fill the gaps.</div>`;
       } else {
         html += ranked.map(d => {
-          const stressBadge = d.stressResult != null ? `<span class="pill ${d.stressResult?'Pass':'Fail'}">${d.stressResult?'✓':'✗'}</span>` : '';
-          const miniSnowflake = d.scores ? `<div class="mini-snow">${snowflake(d.scores, 'mini')}</div>` : '';
+          const composite = d.screenComposite != null ? d.screenComposite : d.composite;
+          const verified = d.screenVerified != null ? d.screenVerified : d.verifiedAxes;
+          const miniSnowflake = d.screenScores ? `<div class="mini-snow">${screenSnowflake(d.screenScores, 'mini')}</div>` : (d.scores ? `<div class="mini-snow">${snowflake(d.scores, 'mini')}</div>` : '');
           const thesisLine = d.thesis ? `<span class="thesis-line">${esc(d.thesis.slice(0,80))}${d.thesis.length>80?'...':''}</span>` : '';
           return `
-            <button class="row ${d.scores?'with-snow':''}" role="option" data-id="${d.id}" aria-current="${current===d.id}">
+            <button class="row ${miniSnowflake?'with-snow':''}" role="option" data-id="${d.id}" aria-current="${current===d.id}">
               ${miniSnowflake}
-              <span class="sc">${fmt(d.composite)}</span>
-              <span><span class="nm">${d.rank?`${d.rank}. `:''}${esc(d.company)}</span>${thesisLine}<span class="meta">${esc(d.country||"")} ${stressBadge}</span></span>
+              <span class="sc">${fmt(composite)}</span>
+              <span><span class="nm">${d.rank?`${d.rank}. `:''}${esc(d.company)}</span>${thesisLine}<span class="meta">${esc(d.country||"")}</span></span>
               <span class="pill ${d.action||'STOP'}">${d.action||'—'}</span>
+            </button>
+          `;
+        }).join('');
+      }
+      
+      // Stopped group
+      if (stopped.length > 0) {
+        html += `<div class="list-group-header">Stopped</div>`;
+        html += stopped.map(d => {
+          const stopReason = d.stopReason ? `<span class="meta">${esc(d.stopReason)}</span>` : '';
+          const thesisLine = d.thesis ? `<span class="thesis-line">${esc(d.thesis.slice(0,80))}${d.thesis.length>80?'...':''}</span>` : '';
+          return `
+            <button class="row" role="option" data-id="${d.id}" aria-current="${current===d.id}">
+              <span class="sc na">—</span>
+              <span><span class="nm">${esc(d.company)}</span>${thesisLine}${stopReason}</span>
+              <span class="pill STOP">STOP</span>
             </button>
           `;
         }).join('');
@@ -345,15 +469,16 @@
       if (needsData.length > 0) {
         html += `<div class="list-group-header">Needs data</div>`;
         html += needsData.map(d => {
-          const coverage = `${d.verifiedAxes||0}/8 verified`;
-          const miniSnowflake = d.scores ? `<div class="mini-snow">${snowflake(d.scores, 'mini')}</div>` : '';
+          const verified = d.screenVerified != null ? d.screenVerified : d.verifiedAxes;
+          const coverage = `${verified||0}/${d.screenVerified!=null?'9':'8'} verified`;
+          const miniSnowflake = d.screenScores ? `<div class="mini-snow">${screenSnowflake(d.screenScores, 'mini')}</div>` : (d.scores ? `<div class="mini-snow">${snowflake(d.scores, 'mini')}</div>` : '');
           const thesisLine = d.thesis ? `<span class="thesis-line">${esc(d.thesis.slice(0,80))}${d.thesis.length>80?'...':''}</span>` : '';
           return `
-            <button class="row ${d.scores?'with-snow':''}" role="option" data-id="${d.id}" aria-current="${current===d.id}">
+            <button class="row ${miniSnowflake?'with-snow':''}" role="option" data-id="${d.id}" aria-current="${current===d.id}">
               ${miniSnowflake}
               <span class="sc na">${coverage}</span>
               <span><span class="nm">${esc(d.company)}</span>${thesisLine}<span class="meta">${esc(d.country||"")}</span></span>
-              <span class="pill STOP" style="opacity:0.5">—</span>
+              <span class="pill ${d.action||'STOP'}" style="opacity:0.5">${d.action||'—'}</span>
             </button>
           `;
         }).join('');
@@ -518,21 +643,29 @@
           </div>
         </div>
         <div class="scoreblock">
-          <div class="big">${fmt(d.composite)}<small> / 100</small></div>
+          ${(() => {
+            const composite = d.screenComposite != null ? d.screenComposite : d.composite;
+            const verified = d.screenVerified != null ? d.screenVerified : d.verifiedAxes;
+            const total = d.screenVerified != null ? 9 : 8;
+            if (composite != null) {
+              return `<div class="big">${fmt(composite)}<small> / 100</small></div>`;
+            } else {
+              return `<div class="big" style="font-size:18px;color:var(--ink3)">Not ranked: ${verified||0}/${total} verified</div>`;
+            }
+          })()}
           <div class="actions">
             ${d.rank?`<span class="eyebrow">Rank ${d.rank}</span>`:''}
             ${d.action?`<span class="pill solid ${d.action}">${d.action}</span>`:''}
           </div>
           <div style="font-family:var(--mono);font-size:11px;color:var(--ink3)">
             ${d.dataConfidence?`Confidence: ${esc(d.dataConfidence)}`:''}<br>
-            ${d.stressResult!=null?`Stress: <span class="pill ${d.stressResult?'Pass':'Fail'}">${d.stressResult?'Pass':'Fail'} at 55</span>`:''}
           </div>
         </div>
       </div>
 
       ${d.companyDescription?`<section class="blk"><p style="font-size:15px;color:var(--ink2);line-height:1.6">${autoLink(esc(d.companyDescription))}</p></section>`:''}
 
-      ${d.scores?`<section class="blk"><div class="snowflake-composite"><div class="snowflake-chart">${snowflake(d.scores)}</div><div class="composite-info"><div class="eyebrow">8-axis composite</div><div class="big-score">${d.composite!=null?fmt(d.composite):`<span style="font-size:24px;color:var(--ink3)">Not ranked: ${d.verifiedAxes||0}/8 verified</span>`}${d.composite!=null?'<span>/100</span>':''}</div><div class="note small">DIVE floor at 2 (dashed), IC floor at 3 (dashed). Unverified axes shown as N/A.</div></div></div></section>`:''}
+      ${d.screenScores?`<section class="blk"><div class="snowflake-composite"><div class="snowflake-chart">${screenSnowflake(d.screenScores)}</div><div class="composite-info"><div class="eyebrow">9-axis screen composite (0–4 scale)</div><div class="big-score">${d.screenComposite!=null?fmt(d.screenComposite):`<span style="font-size:24px;color:var(--ink3)">Not ranked: ${d.screenVerified||0}/9 verified</span>`}${d.screenComposite!=null?'<span>/100</span>':''}</div><div class="note small">Unverified axes shown as N/A. A company ranks with at least 7 of 9 verified, including O1 and O2.</div></div></div></section>`:''}
 
       ${thesisProofHtml}
 
@@ -564,22 +697,35 @@
         ${d.investors?`<p><strong>Investors:</strong> ${esc(d.investors)}</p>`:''}
       </section>`:''}
 
-      ${d.scores?`<section class="blk"><h3>Repeatability Scorecard (8 axes)</h3>
-        <div class="axes">${axesHtml}</div>
-        ${d.floorDive!=null||d.floorIc!=null?`<div class="note">
-          <strong>Floors:</strong> 
-          DIVE (D,U≥2): ${d.floorDive?'Pass':'Fail'} · 
-          IC1/IC2 (D,U,P≥3): ${d.floorIc?'Pass':'Fail'}
-        </div>`:''}
-        ${d.unknowns?`<div style="margin-top:20px"><h4 style="font-size:16px;margin-bottom:8px">What we still need to verify</h4><p style="font-size:14px;color:var(--ink2);line-height:1.6">${autoLink(esc(d.unknowns))}</p></div>`:''}
-      </section>`:''}
+      ${d.unknowns?`<section class="blk"><h3>What we still need to verify</h3><p style="font-size:14px;color:var(--ink2);line-height:1.6">${autoLink(esc(d.unknowns))}</p></section>`:''}
 
-      ${d.stressedComposite!=null?`<section class="blk"><h3>Stress Testing</h3>
-        <p><strong>Stressed composite:</strong> ${fmt(d.stressedComposite)} (lowest of 6 shocks)</p>
-        ${d.worstShock?`<p><strong>Worst shock:</strong> ${esc(d.worstShock)}</p>`:''}
-        ${d.stressSpread!=null?`<p><strong>Stress spread:</strong> ${d.stressSpread}</p>`:''}
-        ${d.regimeDependent?`<p style="color:var(--arc);font-weight:500">Regime-dependent (spread > 10)</p>`:''}
-      </section>`:''}
+      ${d.scores?`<details class="stage2" style="margin:24px 0;border:1px solid var(--hair);border-radius:4px;padding:12px 16px">
+        <summary style="cursor:pointer;font-weight:600;font-size:15px;color:var(--ink2)">Stage 2 (deep dive) — 8-axis v1.2 scorecard</summary>
+        <div style="margin-top:16px">
+          <div class="snowflake-composite" style="margin-bottom:20px">
+            <div class="snowflake-chart">${snowflake(d.scores)}</div>
+            <div class="composite-info">
+              <div class="eyebrow">8-axis composite (0–5 scale)</div>
+              <div class="big-score">${d.composite!=null?fmt(d.composite):`<span style="font-size:24px;color:var(--ink3)">Not ranked: ${d.verifiedAxes||0}/8 verified</span>`}${d.composite!=null?'<span>/100</span>':''}</div>
+              <div class="note small">DIVE floor at 2 (dashed), IC floor at 3 (dashed). Unverified axes shown as N/A.</div>
+            </div>
+          </div>
+          <h4 style="font-size:16px;margin-bottom:12px">Repeatability Scorecard (8 axes)</h4>
+          <div class="axes">${axesHtml}</div>
+          ${d.floorDive!=null||d.floorIc!=null?`<div class="note" style="margin-top:12px">
+            <strong>Floors:</strong> 
+            DIVE (D,U≥2): ${d.floorDive?'Pass':'Fail'} · 
+            IC1/IC2 (D,U,P≥3): ${d.floorIc?'Pass':'Fail'}
+          </div>`:''}
+          ${d.stressedComposite!=null?`<div style="margin-top:20px">
+            <h4 style="font-size:16px;margin-bottom:8px">Stress Testing</h4>
+            <p><strong>Stressed composite:</strong> ${fmt(d.stressedComposite)} (lowest of 6 shocks)</p>
+            ${d.worstShock?`<p><strong>Worst shock:</strong> ${esc(d.worstShock)}</p>`:''}
+            ${d.stressSpread!=null?`<p><strong>Stress spread:</strong> ${d.stressSpread}</p>`:''}
+            ${d.regimeDependent?`<p style="color:var(--arc);font-weight:500">Regime-dependent (spread > 10)</p>`:''}
+          </div>`:''}
+        </div>
+      </details>`:''}
 
       ${dealFitHtml}
 
